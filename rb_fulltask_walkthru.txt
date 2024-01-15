@@ -1,0 +1,253 @@
+# listing of tasks to do
+
+Rename-Computer -newname "newname"
+
+### Creating local groups and users
+
+Add-LocalGroup -name 'groupname'
+
+$users=@("user1", "user2", "user3")
+foreach ($u in $users){
+New-LocalUser -Name "$u" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -PasswordNeverExpires -AccountNeverExpires -UserMayNotChangePasswor
+
+Add-LocalGroupMember -name 'groupname' -member ('user1','user2','user3')
+
+### creating directories for separate groups and uses, setting up permissions
+
+mkdir path\to\dir\dirname  
+
+icacls path\to\dir\dirname /inheritancelevel:d                       # disables permission inhertitance
+icacls path\to\dir\dirname /remove:g:d Users /t                      # removes rights and denys, does it on all subdirs and files of the user group 'Users'
+icacls path\to\dir\dirname /grant "Administrator:(OI)(CI)(IO)(F)"    # Grants the Administarrtor object (OI) container (CI) inheritance and fullcontrol (F) and enables inheritance from parent container but no on objects (IO) to the Administrator
+icacls path\to\dir\dirname /grant "user1:(RX,W)"                     # grants read and execute (RX) and write (W) to user1
+icacls path\to\dir\dirname /grant "user2:(RX)"                       # grants read and execute (RX) to user2
+
+# there are more groups to get rid off when making a dir for only one group or user
+# in case of making a homedir to webserver needs to add the following line
+
+icacls path\to\dir\dirname /grant "IUSR:(OI)(CI)(RX)"
+
+
+### making a network ahsre on the server, and mapping it to the users
+
+Set-SmbClientConfiguration -EnableInsecureGuestLogons $true  # allows guest to connect to the smb shares on the smb sever
+New-SmbShare -Name "sharename$" -Path "path\to\share\root" -FullAccess "EveryOne" # the $ in the share name indicates that the share is hidden, only avaible to whom know the path, not showing up in the network shares search
+New-SmbMapping -LocalPath 'driveletter:' -RemotePath '\\machine\path\to\share$' -persistent
+
+# to map a network share in file explorer one can use the following command
+
+net use driveletter: \\mahcine\path\to\share /persistent:yes 
+
+# to delete one:
+
+net use driveletter: /delete
+
+# to map a network share to a specific user you have to be logged into that users account
+
+### managing virtual machines from command line
+
+# virtual box
+
+cd c:\path\to\vbox\
+VBoxManage createvm --name vmname --ostype WS2019 --register
+VBoxManage showvminfo vmname
+VBoxManage modifyvm VIZSGA-SZERVER --cpus 1 --memory 4096 
+VBoxManage createhd --filename c:\path\to\vbox\vmname\vmname.vdi --size 71680 --variant Standard
+VBoxManage storagectl vmname --name "SATA Controller" --add sata --bootable on
+VBoxManage storageattach vmname --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium dc:\path\to\vbox\vmname\vmname.vdi
+VBoxManage storagectl vmname --name "IDE Controller" --add ide
+VBoxManage storageattach vmname --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium c:\download\path\to\iso\vizsga-ws2019.iso
+VBoxManage startvm vmname 
+VBoxManage modifyvm vmname --nic1=bridged --nic2=hostonly   (hostonly, intnet, natnetwork)
+
+# creating a hard drrive, and connecting to the vm
+
+VBoxManage createhd --filename C:/VBox/HDDs/VizsgaW.vdi --size 10240 --variant standard
+VBoxManage storageattach VIZSGAGEP --storagectl "SATA Controller" 
+--port 10 --device 0 --type hdd --medium C:/VBox/HDDs/VizsgaW.vdi
+
+# hyperv
+
+
+# disk configuration, partitioning on the vm from powershell
+
+Get-Disk | Where partitionstyle -eq ‘raw’ | Initialize-Disk -PartitionStyle MBR -PassThru | New-Partition -DriveLetter W -UseMaximumSize | Format-Volume -FileSystem NTFS -NewFileSystemLabel “W meghajto” -Confirm:$false  # this gets all raw new disks connected to the machine, inicializes, partitions and formats them, assigns drive letter
+
+# if there are more disks connected to the devices, this is has to be done step by step as it follows
+# in this example there are multiple partitions made on one disk
+
+Get-Disk
+Initialize-Disk -number 1 -PartitionStyle MBR
+New-Partition -DiskNumber 1 -DriveLetter "F" –size 10240
+Format-Volume -DriveLetter "F" -FileSystem NTFS
+Set-Volume -DriveLetter "F" −NewFileSystemLabel "Data"
+
+New-Partition -DiskNumber 1 -Size 9216 -MbrType Extended
+
+New-Partition -DiskNumber 1 -Size 3072 -DriveLetter "G"
+Format-Volume -DriveLetter "G" -FileSystem NTFS
+Set-Volume -DriveLetter "G" -NewFileSystemLabel "Data3"
+
+New-Partition -DiskNumber 1 -Size 2048 -DriveLetter "H"
+Format-Volume -DriveLetter "H" -FileSystem NTFS
+Set-Volume -DriveLetter "H" -NewFileSystemLabel "Data2"
+
+New-Partition -DiskNumber 1 -Size 1024 -DriveLetter "I"
+Format-Volume -DriveLetter "I" -FileSystem NTFS
+Set-Volume -DriveLetter "I" -NewFileSystemLabel "Data1"
+
+
+# creating quotas
+
+Install-WindowsFeature -Name FS-Resource-Manager -IncludeManagementTools
+New-FsrmQuotaTemplate -Name "quotaTemplateName" -Description "limit usage to 300 MB." -Size 300MB -SoftLimit 250MB
+
+New-FsrmQuota -Path "path\to\dir\or\share\location" -Description "300MB Limit" -Template "quotaTemplateName"
+New-FsrmQuota -Path "path\to\dir\or\share\location" -Description "300MB Limit" -Template "quotaTemplateName"
+
+
+
+
+# managing logon hours
+
+$logonhours=@{"Logonhours"= [byte[]]$hours=@(0,0,0,3,255,248,3,255,248,3,255,248,3,255,248,3,255,248,0,0,0)}
+Set-ADUSer "adUserName1" -Replace $logonHours
+
+$logonhours=@{"Logonhours"= [byte[]]$hours=@(0,0,0,3,255,248,3,255,248,3,255,248,3,255,248,3,255,248,0,0,0)}
+Set-ADUSer "adUserName2" -Replace $logonHours
+
+# bytes are as it follows: 
+# (sunday0-8, sunday8-16, sunday16-24, monday0-8, monday8-16, monday16-24, tuesday0-8, tuesday8-16, tuesday16-24, wednesday0-8, wednesday8-16, wednesday16-24, thursday0-8, thursday8-16, thursday16-24, friday0-8, friday8-16, friday16-24, saturday0-8, saturday8-16, saturday16-24)
+
+# time bytes are as it follows: it is calculated by assigning a bit to every hour of a day, 1 allows login, 0 denies it. every byte counts as 8 hours, containing every allow and deny for that time period. for a single day, one needs 3 bytes for (0, 0, 0) denying login for that day, (255, 255, 255) allows the user to logon at any hour for that day.
+
+
+### creating software raid with windows storage subsystem
+
+Get-Disk
+Get-PhysicalDisk
+Get-StoragePool
+Get-PhysicalDisk -CanPool $true
+
+$s = Get-StorageSubSystem
+$PhysicalDisks = (Get-PhysicalDisk -CanPool $true)
+New-StoragePool -FriendlyName "RAID5 Storage Pool" -StorageSubSystemUniqueId $s.UniqueId -PhysicalDisks $PhysicalDisks -ResiliencySettingNameDefault "Parity"
+New-VirtualDisk -Friendlyname "RAID5 StoragePool" -StoragePoolFriendlyName "RAID5 Storage Pool" -UseMaximumSize
+Initialize-Disk -FriendlyName "RAID5 StoragePool"
+Get-Disk   # Lemezszam miatt kell
+New-Partition -DiskNumber 4 -UseMaximumSize -AssignDriveLetter      > E:
+Format-Volume -DriveLetter "E"
+
+### making a webserver
+
+Install-WindosFeature -Name Web-Server -IncludeManagementTools
+Stop-Website 'Default Web site'
+mkdir path\to\web\root
+icacls path\to\web\root /grant "IUSR:(OI)(CI)(RX)"
+New-File -fileType file -name index.html
+ehco "Content to add here" > path\to\web\root\index.html
+New-WebSite -Name "sitename" -Port 80 -PhysicalPath "path\to\web\root\index.html"
+curl localhost:80
+
+# making an FTP server is similar 
+
+Install-WindowsFeature Web-FTP-Server -IncludeManagementTools
+
+New-WebFtpSite -Name "FTP21Anon" -IPAddress "*" -Port 21 -PhysicalPath w:\FTP\21Anon
+Set-ItemProperty "IIS:\Sites\21Anon" -Name physicalPath -Value 'w:\FTP\21Anon'
+
+
+### dhcp
+
+Install-WindowsFeature DHCP -IncludeManagementTools
+
+$hostname=hostname.exe
+Add-DhcpServerSecurityGroup -ComputerName $hostname
+Add-DhcpServerInDC -DnsName "dns.MODULZARO.LOCAL" -IPAddress 172.16.10.1 -PassThru
+Add-DhcpServerv4Scope -Name "Belső szórás 20-43" -StartRange 172.16.10.20 -EndRange 172.16.10.43 -SubnetMask 255.255.255.0 -LeaseDuration 8.00:00:00 -State Active -PassThru 
+Add-DhcpServerv4Scope -Name "Belső szórás 45-50" -StartRange 172.16.10.45 -EndRange 172.16.10.50 -SubnetMask 255.255.255.0 -LeaseDuration 8.00:00:00 -State Active -PassThru 
+# if one would like to have an ip excluded from a scope, they have to make two separate scopes, config doesnt allow exclusions
+
+### ip configuration
+
+# if one would like to install adds with dns, they have to do it before setting static IP
+
+Get-NetIPInterface
+Set-NetIPInterface -InterfaceIndex 5 -InterfaceAlias "OUTER" -dhcp Enabled
+Set-NetIPInterface -InterfaceIndex 6 -InterfaceAlias "INNER" -dhcp Disabled
+New-NetIPAddress -InterfaceIndex 5 -AddressFamily IPv4 -IPAddress "192.168.1.110" -PrefixLength 24 -DefaultGateway "192.168.1.1"
+Set-NetIPAddress -InterfaceIndex 5 -IPAddress "192.168.1.110"
+
+### NAT
+
+ipconfig /all 
+Set-NetIPAddress -InterfaceIndex 3 -InterfaceAlias "OUTER"
+Set-NetIPAddress -InterfaceIndex 5 -InterfaceAlias "INNER"
+Install-WindowsFeature Routing -IncludeManagementTools
+Install-RemoteAccess -VpnType RoutingOnly
+netsh routing ip nat install
+netsh routing ip nat add interface "INNER" 
+netsh routing ip nat add interface "OUTER" mode=full
+
+
+### ADDOMAIN
+
+Install-WindowsFeature -name AD-Domain-Services -IncludeManagementTools
+Install-ADDSForest -DomainName "domain.local" -ForestMode WinThreshold -DomainMode WinThreshold -DomainNetbiosName "netbiosname" -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -InstallDNS
+
+New-ADOrganizationalUnit -Name "adouname"
+
+New-ADGroup -groupscope Global -name "adgroupname" -Path "OU=ADOUNAME,DC=DOMAIN,DC=LOCAL"
+
+#EITHER
+
+$csvfile="useradatok.csv"
+new-item -Path . -Name $csvfile -type file -Value "firstname;lastname;sam;ou;password
+User;1;User1;OU=VIZSGAFELHASZNALOK,DC=VIZSGA,DC=LOCAL;Password123
+User;2;User2;OU=VIZSGAFELHASZNALOK,DC=VIZSGA,DC=LOCAL;Password123
+User;3;User3;OU=VIZSGAFELHASZNALOK,DC=VIZSGA,DC=LOCAL;Password123
+"
+$user = Import-Csv -Path $csvfile -Delimiter ";"
+foreach ($userP in $user)
+{
+    $DisplayName = $userP.firstname + " " + $userP.lastname;
+    $firstName = $userP.firstname;
+    $lastName = $userP.lastname;
+    $OU = $userP.ou;
+    $Sam = $userP.sam;
+    $UserPassword = ConvertTo-SecureString $userP.password -asplaintext -force;
+
+    New-ADUser -Name $DisplayName -DisplayName $DisplayName -SamAccountName $Sam -GivenName $firstName -Surname $lastName -AccountPassword $UserPassword -Path $OU -Enabled $true -ChangePasswordAtLogon $false -PasswordNeverExpires $true
+    Write-Host $Sam "sikeresen létrehozva"; 
+    Add-ADGroupMember -Identity VIZSGAZOK -Members $Sam
+}
+#OR
+
+$users=@("Gazd1", "Gazd2", "Graf1", "Graf2")
+foreach ($u in $users) {
+    New-ADUser -Name $u -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -CannotChangePassword $true -PasswordNeverExpires $true -Path "OU=DOLGOZOK,DC=RBVIZSGA,DC=LOCAL" -Enabled $true
+}
+
+#BUT MORE LIKELY
+
+New-ADUser -Name "adusername" -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=ADOUNAME,DC=DOMAIN,DC=LOCAL" -enabled $true
+#for each user
+
+Add-ADGroupMember -Identity adgroupname -Members adusername
+
+### DNS
+
+# Setting up without ADDS
+# Install-WindowsFeature DNS
+
+Set-DnsClientServerAddress -InterfaceIndex 5 -ServerAddresses ("8.8.8.8", "8.8.4.4")
+Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses ("127.0.0.1", "10.10.10.200")
+Set-DnsServerForwarder -IPAddress 8.8.8.8 -PassThru
+
+Add-DnsServerResourceRecordA -Name "recorda1" -ZoneName "domain.local" -IPv4Address "10.40.50.200"
+Add-DnsServerResourceRecordA -Name "recorda2" -ZoneName "domain.local" -IPv4Address "10.40.50.1"
+
+Add-DnsServerResourceRecordCName -Name "cname1" -HostNameAlias "recorda1.domain.local" -ZoneName "mzaro.local" -PassThru
+Add-DnsServerResourceRecordCName -Name "cname2" -HostNameAlias "recorda1.domain.local" -ZoneName "mzaro.local" -PassThru
+Add-DnsServerResourceRecordCName -Name "cname3" -HostNameAlias "recorda2.domain.local" -ZoneName "mzaro.local" -PassThru
+Add-DnsServerResourceRecordCName -Name "cname4" -HostNameAlias "recorda2.domain.local" -ZoneName "mzaro.local" -PassThru

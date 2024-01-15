@@ -1,0 +1,4 @@
+﻿First name,Last name,Display name,User logon name,User principal name,Street,City,State/province,Zip/Postal Code,Country/region,Job Title,Department,Company,Manager,OU,Description,Office,Telephone number,Other Telephone,E-mail,Mobile,Notes,Account status
+Szevasz,Béla,Szevasz Béla,szevasz.bela,szevaszbela@vizsga.local,,,,,,,,,,"OU=VIZSGAFELHASZNALOK,DC=vizsga,DC=local",,,,,,,,Enabled
+Szia,Lajos,Sszia Lajos,szia.lajos,szialajos@vizsga.local,,,,,,,,,,"OU=VIZSGAFELHASZNALOK,DC=vizsga,DC=local",,,,,,,,Enabled
+Mizu,János,Mizu János,mizu.janos,mizujanos@vizsga.local,,,,,,,,,,"OU=VIZSGAFELHASZNALOK,DC=vizsga,DC=local",,,,,,,,Enabled

@@ -1,0 +1,1689 @@
+                                01 - win
+
+
+
+
+                                02 - win
+
+
+I.1
+Add-LocalGroup -name Tanarok
+Add-LocalGroup -name Tanulok
+
+I.2
+New-LocalUser -Name "Diak1" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -PasswordNeverExpires -AccountNeverExpires -UserMayNotChangePassword
+New-LocalUser -Name "Diak2" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -PasswordNeverExpires -AccountNeverExpires -UserMayNotChangePassword
+New-LocalUser -Name "Tanar1" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -PasswordNeverExpires -AccountNeverExpires -UserMayNotChangePassword
+New-LocalUser -Name "Tanar2" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -PasswordNeverExpires -AccountNeverExpires -UserMayNotChangePassword
+New-LocalUser -Name "Konyvtaros" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -PasswordNeverExpires -AccountNeverExpires -UserMayNotChangePassword
+
+I.3
+Add-LocalGroupMember -group "Tanulok" -member "Diak1", "Diak2"
+Add-LocalGroupMember -group "Tanarok" -member "Tanar1", "Tanar2"
+
+I.4
+mkdir c:\Megosztasok\Tanuloknak
+mkdir c:\Megosztasok\Tanaroknak
+mkdir c:\Megosztasok\DKozos
+
+I.5
+icacls c:\Megosztasok\Tanaroknak /inheritancelevel:d 
+icacls c:\Megosztasok\Tanaroknak /remove:g:d Users /t 
+icacls c:\Megosztasok\Tanaroknak /grant "Tanarok:(OI)(CI)(IO)(F)" 
+icacls c:\Megosztasok\Tanaroknak /grant "Tanarok:(RX,W)"
+
+I.6
+icacls c:\Megosztasok\Tanuloknak /inheritancelevel:d 
+icacls c:\Megosztasok\Tanuloknak /remove:g:d Users /t 
+icacls c:\Megosztasok\Tanuloknak /grant "Tanarok:(OI)(CI)(IO)(F)" 
+icacls c:\Megosztasok\Tanuloknak /grant "Tanarok:(RX,W)"
+icacls c:\Megosztasok\Tanuloknak /grant "Tanulok:(RX)"
+
+I.7
+icacls c:\Megosztasok\DKozos /inheritancelevel:d 
+icacls c:\Megosztasok\DKozos /remove:g:d Users /t 
+icacls c:\Megosztasok\DKozos /grant "Tanarok:(OI)(CI)(IO)(F)" 
+icacls c:\Megosztasok\DKozos /grant "Tanarok:(RX,W)"
+icacls c:\Megosztasok\DKozos /grant "Tanulok:(RX,W)"
+
+I.8
+cd c:\path\to\vbox\
+VBoxManage createhd --filename /path/to/hard_drive_image/20gbdinamikuslemez.vdi --variant=Standard --size 20480
+VBoxManage storageattach OracleLinux6Test --storagectl "SATA Controller" 
+--port 10 --device 0 --type hdd 
+--medium /path/to/hard_drive_image/20gbdinamikuslemez.vdi
+
+Get-Disk
+Initialize-Disk -number 1 -PartitionStyle MBR
+New-Partition -DiskNumber 1 -DriveLetter "F" –size 10240
+Format-Volume -DriveLetter "F" -FileSystem NTFS
+Set-Volume -DriveLetter "F" −NewFileSystemLabel "Data"
+
+New-Partition -DiskNumber 1 -Size 9216 -MbrType Extended
+
+New-Partition -DiskNumber 1 -Size 3072 -DriveLetter "G"
+Format-Volume -DriveLetter "G" -FileSystem NTFS
+Set-Volume -DriveLetter "G" -NewFileSystemLabel "Data3"
+
+New-Partition -DiskNumber 1 -Size 2048 -DriveLetter "H"
+Format-Volume -DriveLetter "H" -FileSystem NTFS
+Set-Volume -DriveLetter "H" -NewFileSystemLabel "Data2"
+
+New-Partition -DiskNumber 1 -Size 1024 -DriveLetter "I"
+Format-Volume -DriveLetter "I" -FileSystem NTFS
+Set-Volume -DriveLetter "I" -NewFileSystemLabel "Data1"
+
+I.10
+New-FsrmQuota -Path "F:\" -Size 10MB -SoftLimit 7MB
+
+I.11
+
+I.12
+mkdr i:\Megoszt
+
+I.13
+New-SmbShare -Name "TanarIr" -Path "I:\Megoszt" -FullAccess "Everyone"
+
+I.14
+
+I.15
+cd c:\path\to\vbox\
+
+VBoxManage createhd --filename /path/to/hard_drive_image/10gblemez1.vdi --variant=Standard --size 10240
+VBoxManage storageattach WS2022 --storagectl "SATA Controller" 
+--port 9 --device 0 --type hdd 
+--medium /path/to/hard_drive_image/10gblemez1.vdi
+
+VBoxManage createhd --filename /path/to/hard_drive_image/10gblemez2.vdi --variant=Standard --size 10240
+VBoxManage storageattach WS2022 --storagectl "SATA Controller" 
+--port 8 --device 0 --type hdd 
+--medium /path/to/hard_drive_image/10gblemez2.vdi
+
+VBoxManage createhd --filename /path/to/hard_drive_image/10gblemez3.vdi --variant=Standard --size 10240
+VBoxManage storageattach WS2022 --storagectl "SATA Controller" 
+--port 7 --device 0 --type hdd 
+--medium /path/to/hard_drive_image/10gblemez3.vdi
+
+I.16
+Get-Disk
+Get-PhysicalDisk
+Get-StoragePool
+Get-PhysicalDisk -CanPool $true
+
+$s = Get-StorageSubSystem
+$PhysicalDisks = (Get-PhysicalDisk -CanPool $true)
+New-StoragePool -FriendlyName "RAID5 Storage Pool" -StorageSubSystemUniqueId $s.UniqueId -PhysicalDisks $PhysicalDisks -ResiliencySettingNameDefault "Parity"
+New-VirtualDisk -Friendlyname "RAID5 StoragePool" -StoragePoolFriendlyName "RAID5 Storage Pool" -UseMaximumSize
+Initialize-Disk -FriendlyName "RAID5 StoragePool"
+Get-Disk                                                            ///Lemezszam miatt kell
+New-Partition -DiskNumber 4 -UseMaximumSize -AssignDriveLetter      > E:
+Format-Volume -DriveLetter "E"
+
+I.19
+VBoxManage createhd --filename /path/to/hard_drive_image/1gblemez1.vdi --variant=Standard --size 1024
+VBoxManage storageattach WS2022 --storagectl "SATA Controller" 
+--port 6 --device 0 --type hdd 
+--medium /path/to/hard_drive_image/1gblemez1.vdi
+
+VBoxManage createhd --filename /path/to/hard_drive_image/1gblemez2.vdi --variant=Standard --size 1024
+VBoxManage storageattach WS2022 --storagectl "SATA Controller" 
+--port 5 --device 0 --type hdd 
+--medium /path/to/hard_drive_image/1gblemez2.vdi
+
+$disks = Get-PhysicalDisk -FriendlyName "Msft*"
+New-StoragePool -FriendlyName "RAID0" -StorageSubsystemFriendlyName "Windows Storage*" -PhysicalDisks $disks | New-VirtualDisk -FriendlyName "RAID0Disk" -NumberOfColumns 2 -ResiliencySettingName simple -UseMaximumSize | Initialize-Disk -PassThru | New-Partition -DriveLetter W -UseMaximumSize | Format-Volume
+
+I.20
+mkdir w:\WWW
+mkdir w:\FTP
+
+I.21
+Add-LocalGroup -name webadminok
+New-LocalUser -Name "webadmin" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -PasswordNeverExpires -AccountNeverExpires -UserMayNotChangePassword
+Add-LocalGroupMember -group "webadminok" -member "webadmin"
+
+I.22
+Install-WindowsFeature Web-FTP-Server -IncludeManagementTools
+
+icacls w:\WWW /inheritancelevel:d 
+icacls w:\WWW /remove:g:d Users /t 
+icacls w:\WWW /grant "webadminok:(OI)(CI)(IO)(F)" 
+icacls w:\WWW /grant "webadminok:(RX,W)"
+
+icacls w:\FTP /inheritancelevel:d 
+icacls w:\FTP /remove:g:d Users /t 
+icacls w:\FTP /grant "webadminok:(OI)(CI)(IO)(F)" 
+icacls w:\FTP /grant "webadminok:(RX,W)"
+
+I.23
+Elozo Feladatban Megoldva
+
+I.24
+Stop-Website 'Default Web site'
+
+I.25
+mkdir w:\WWW\80
+New-Item -ItemType file -Name index.html -path w:\WWW\80\
+echo "My name is bator romany" > w:\www\80\index.html
+
+New-WebSite -Name "X80" -Port 80 -PhysicalPath "w:\WWW\80\index.html"
+curl localhost:80
+
+I.26
+mkdir w:\WWW\443
+New-Item -ItemType file -Name index.html -path w:\WWW\443\
+echo '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+</head>
+<body>
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-baqh{text-align:center;vertical-align:top}
+.tg .tg-0lax{text-align:left;vertical-align:top}
+</style>
+<table class="tg">
+<thead>
+  <tr>
+    <th class="tg-baqh">X</th>
+    <th class="tg-baqh">Hetfo</th>
+    <th class="tg-baqh">Kedd</th>
+    <th class="tg-baqh">Szerda</th>
+    <th class="tg-baqh">Csutortok</th>
+    <th class="tg-baqh">Pentek</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="tg-baqh">1.</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+  </tr>
+  <tr>
+    <td class="tg-baqh">2.</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+  </tr>
+  <tr>
+    <td class="tg-baqh">3.</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+  </tr>
+  <tr>
+    <td class="tg-baqh">4.</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+    <td class="tg-0lax">Gyakorlas</td>
+  </tr>
+</tbody>
+</table>
+</body>
+</html>' > w:\WWW\443\index.html
+New-WebSite -Name "X443" -Port 443 -PhysicalPath "w:\WWW\443\index.html"
+curl localhost:443
+
+I.27
+mkdir w:\WWW\800
+New-Item -ItemType file -Name index.html -path w:\WWW\800\
+echo "This is from port 800" > w:\www\800\index.html
+
+New-WebSite -Name "X800" -Port 800 -PhysicalPath "w:\www\800\index.html"
+curl localhost:800
+
+I.28
+New-LocalGroup -Name "FTP"
+Add-LocalGroupMember -Group "FTP" -Member "FTPfelhasznalo"
+
+mkdir w:\FTP\21Anon\Download
+mkdir w:\FTP\21Anon\Upload
+New-WebFtpSite -Name "FTP21Anon" -IPAddress "*" -Port 21 -PhysicalPath w:\FTP\21Anon
+Set-ItemProperty "IIS:\Sites\21Anon" -Name physicalPath -Value 'w:\FTP\21Anon'
+
+
+
+                                03 - win
+
+
+
+I.1
+New-VMSwitch -name BelsoSW -SwitchType Internal
+New-VM -Name Server -MemoryStartupBytes 4GB -BootDevice VHD -VHDPath path\to\vhds\Test.vhdx -Path path\to\vms\VMData -Generation 2 -Switch ExternalSwitch
+Rename-VMNetworkAdapter -VMName Server -NewName Kulso
+Add-VMNetworkAdapter -VMName Server -SwitchName BelsoSW -Name Belso
+New-VM -Name Client -MemoryStartupBytes 4GB -BootDevice VHD -VHDPath path\to\vhds\Test.vhdx -Path path\to\vms\VMData -Generation 2 -Switch BelsoSW
+
+
+I.3
+Get-NetIPInterface >> Belso - 30 ; Kulso - 35
+Set-NetIPInterface -Interfaceindex 35 -Dhcp Enabled
+
+I.4
+On server
+Set-NetIPAddress -InterfaceIndex 30 -AddressFamily IPv4 -IPAdress 10.40.50.200 -PrefixLenght 24
+
+
+I.5
+On client
+Get-NetIPInterface >> Belso - 30
+Set-NetIPAddress -InterfaceIndex 30 -AddressFamily IPv4 -IPAdress 10.40.50.1 -PrefixLenght 24
+
+I.6
+On server
+ping 8.8.8.8
+curl https://www.youtube.com
+
+I.7
+On server
+Set-NetFirewallRule -DisplayName "File and Printer Sharing (Echo Request - ICMPv4-In)" -enabled True
+
+On client
+Set-NetFirewallRule -DisplayName "File and Printer Sharing (Echo Request - ICMPv4-In)" -enabled True
+ping 10.40.50.200
+
+On server
+ping 10.40.50.1
+
+I.8
+On server
+Rename-Computer -NewName "Server" -Restart
+
+I.9
+On server
+New-LocalUser -Name "Webmester" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -PasswordNeverExpires -AccountNeverExpires -UserMayNotChangePassword
+New-LocalUser -Name "Kulsos" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -PasswordNeverExpires -AccountNeverExpires -UserMayNotChangePassword
+
+I.10
+New-LocalGroup -name "Webmesterek"
+Add-LocalGroupMember -group "Webmesterek" -member "Webmester"
+
+I.11
+Install-WindosFeature -Name Web-Server -IncludeManagementTools
+
+I.12
+mkdir c:\Web
+
+I.13
+icacls c:\Web /inheritancelevel:d 
+icacls c:\Web /remove:g:d Users /t 
+icacls c:\Web /grant "Webmesterek:(OI)(CI)(IO)(F)" 
+icacls c:\Web /grant "Webmesterek:(RX,W)"
+icacls c:\Web /grant "IUSR:(OI)(CI)(RX)"
+
+I.14
+Stop-Website 'Default Web site'
+
+I.15
+New-Item -ItemType file -name "index.html" -path "c:\Web\"
+echo "Modulzáró folyamatban..." > c:\Web\index.html
+New-WebSite -Name "Tesztoldal" -Port 80 -PhysicalPath "c:\Web\index.html"
+curl localhost:80
+
+I.16
+Install-WindowsFeature -name AD-Domain-Services -IncludeManagementTools
+Install-ADDSForest -DomainName "mzaro.local" -ForestMode WinThreshold -DomainMode WinThreshold -DomainNetbiosName MZARO -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -InstallDNS
+
+I.17
+Get-DnsServerForwarder
+Set-DnsServerForwarder -IPAddress 8.8.8.8 -PassThru
+
+I.18
+Add-DnsServerResourceRecordA -Name "szerver" -ZoneName "mzaro.local" -IPv4Address "10.40.50.200"
+Add-DnsServerResourceRecordA -Name "kliens" -ZoneName "mzaro.local" -IPv4Address "10.40.50.1"
+
+I.19
+Add-DnsServerResourceRecordCName -Name "www" -HostNameAlias "szerver.mzaro.local" -ZoneName "mzaro.local" -PassThru
+Add-DnsServerResourceRecordCName -Name "ns" -HostNameAlias "szerver.mzaro.local" -ZoneName "mzaro.local" -PassThru
+Add-DnsServerResourceRecordCName -Name "gw" -HostNameAlias "szerver.mzaro.local" -ZoneName "mzaro.local" -PassThru
+Add-DnsServerResourceRecordCName -Name "win10" -HostNameAlias "kliens.mzaro.local" -ZoneName "mzaro.local" -PassThru
+
+I.20
+On server
+ipconfig /all
+Set-DnsClientServerAddress -InterfaceIndex 30 -ServerAddresses ("127.0.0.1","10.40.50.200")
+
+nslookup szerver.mzaro.local
+nslookup www.youtube.com
+
+I.21
+On client
+Set-DnsClientServerAddress -InterfaceIndex 30 -ServerAddresses ("10.40.50.200")
+
+nslookup szerver.mzaro.local
+nslookup www.youtube.com
+
+I.22
+On server
+ipconfig /all > 192.168.0.10/24
+Install-WindowsFeature Routing -IncludeManagementTools
+Install-RemoteAccess -VpnType RoutingOnly
+netsh routing ip nat install
+netsh routing ip nat add interface "Belső"  (Ez itt a belső)
+netsh routing ip nat add interface 'Külső' mode=full
+(Remove-NetIPAddress -InterfaceIndex 6 -AddressFamily IPv4 -IPAddress "10.40.50.1" -PrefixLength 24)
+New-NetIPAddress -InterfaceIndex 6 -AddressFamily IPv4 -IPAddress "10.40.50.1" -PrefixLength 24 -DefaultGateway "10.40.50.200"
+ping 8.8.8.8
+
+I.23
+$credential = New-Object System.Management.Automation.PSCredential("mzaro\Administrator", (ConvertTo-SecureString -AsPlainText "Password123" -Force))
+Add-Computer -ComputerName DESKTOP-BFNUHJ7 -DomainName "mzaro.local" -Credential $credential -Restart -Force -NewName "Win10"
+
+
+I.24
+New-ADOrganizationalUnit -Name Teszt
+
+I.25
+New-ADUser -Name Tesztelo1 -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=TESZT,DC=MZARO,DC=LOCAL" -Enabled $true
+New-ADUser -Name Tesztelo2 -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=TESZT,DC=MZARO,DC=LOCAL" -Enabled $true
+
+I.26
+New-ADGroup -groupscope Global -name "Tesztelok" -Path "OU=TESZT,DC=MZARO,DC=LOCAL"
+Add-ADGroupMember -identity "Tesztelok" -members "Tesztelo1", "Tezstelo2"
+
+I.27
+mkdir c:\Tesztanyagok
+icacls c:\Web /inheritancelevel:d 
+icacls c:\Web /remove:g:d Users /t 
+icacls c:\Web /grant "Tesztelok:(OI)(CI)(IO)(F)" 
+icacls c:\Web /grant "Tesztelok:(RX,W)"
+
+icacls c:\Web /grant "Kulsos:(OI)(CI)(RX)"
+
+
+I.28
+New-SmbShare -Name "Tesztek$" -Path "c:\Tesztanyagok" -FullAccess "EveryOne"
+New-SmbMapping -LocalPath 'T:' -RemotePath '\\Szerver\Teszt$'
+
+
+
+                                04 - zaro
+
+
+I.1
+mkdir c:\Vizsga
+
+
+I.2
+New-PSDrive -name V: -PSProvider FileSystem -Root 'C:\Vizsga' 
+
+I.3
+cd v:\
+
+I.4
+        (Install-WindowsFeature -name AD-Domain-Services –IncludeManagementTools
+        Restart-Computer –Force
+        Install-ADDSForest -DomainName "vizsgarb.local " -ForestMode WinThreshold -DomainMode WinThreshold -DomainNetbiosName VIZSGARB -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -InstallDNS)
+Get-ADDomain -Current LocalComputer -->>> vizsga.local
+New-ADOrganizationalUnit -Name Vizsga1
+
+I.5
+New-ADUser -Name User1 -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=VIZSGA1,DC=VIZSGA,DC=LOCAL" -Enabled $ture
+New-ADUser -Name User2 -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=VIZSGA1,DC=VIZSGA,DC=LOCAL" -Enabled $ture
+New-ADUser -Name User3 -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=VIZSGA1,DC=VIZSGA,DC=LOCAL" -Enabled $ture
+New-ADUser -Name User4 -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=VIZSGA1,DC=VIZSGA,DC=LOCAL" -Enabled $ture
+
+
+I.6
+$createdSinceDate = ((Get-Date).AddDays(-1)).Date
+$ou = 'DC=VIZSGA,DC=LOCAL'
+
+Get-ADUser -Filter {whenCreated -ge $createdSinceDate} -Properties whenCreated -SearchBase $ou | Out-File Vizsga-RB.txt 
+
+
+II.1
+New-ADOrganizationalUnit -Name Vizsga1
+
+
+II.2
+New-ADGroup -GroupScope Global -Name Vizsgazok -Path "OU=VIZSGA,DC=VIZSGA,DC=LOCAL"
+
+II.3
+New-ADUser -name Vizsgazo -GivenName "Vizsgazo" -Surname "Felhasznalo" -AccountPassword (ConvertTo-SecureString -AsPlainText "Pas$w0rd" -Force) -Path "OU=VIZSGA,DC=VIZSGA,DC=LOCAL" -Enabled $true
+
+II.4
+Add-ADGroupMember -Identity "Vizsgazok" -Members "Vizsgazo"
+
+II.5
+(Get-ADPrincipalGroupMembership -Identity Vizsgazo).name | ForEach-Object name > Vizsga2-RB.txt 
+
+III.1
+
+
+III.2
+
+
+III.3
+select nev, varos from mozi
+where nev like '%art%';
+
+III.4
+select top 1 nev from eloadas,mozi
+where moziid=id
+group by nev
+order by count(kezdes) DESC
+
+III.5
+select nev
+from eloadas,mozi
+where moziid=id and szinkron like '%felirat%'
+group by nev
+having count(kezdes)>1
+
+III.6
+select varos, nev, count(kezdes) as 'Előadások száma' from mozi, eloadas
+where mozi.id=eloadas.moziid
+group by varos,cim,nev
+order by varos, count(kezdes) asc
+
+IV.1
+create database Vizsga4
+
+IV.2
+..
+
+IV.3
+select top 1 ev from huzas
+group by ev
+having count(het)>51
+order by ev asc
+
+IV.4
+select huzas.ev, huzas.het from huzott, huzas
+where huzas.id=huzott.huzasid and (huzott.szam = '1' or huzott.szam = '45')
+group by ev, het
+having count(szam)='2'
+order by ev, het
+
+IV.5
+select h.ev, sum(cast(n.ertek as bigint)) as 'Nyeremény' from huzas as h, nyeremeny as n
+where h.id=n.huzasid and h.ev>'2000' and h.ev<'2011'
+group by h.ev
+order by h.ev
+
+V.1
+New-AzADGroup -DisplayName "Vizsga" -MailNickname "vizsga"
+
+V.2
+New-AzADUser -DisplayName "Vizsgázó" -Password (ConvertTo-SecureString -AsPlainText -Force "Password123") -AccountEnabled $true -MailNickname "Vizsgazo" -UserPrincipalName "vizsgazo@valamigmail.onmicrosoft.com"
+
+V.3
+Add-AzADGroupMember -TargetGroupObjectId (Get-AzADGroup -DisplayName "Vizsga").Id -MemberObjectId (Get-AzADUser -DisplayName "Vizsgázó").Id
+
+VAGY
+
+$groupid=(Get-AzADGroup -DisplayName "Vizsga".Id
+$members=@()
+$members+=(Get-AzADUser -DisplayName "Vizsgázó").Id
+Add-AzADGroupMember -TargetGroupObjectId $groupid -MemberObjectId $members
+
+V.4
+Get-AzADGroupMember -DisplayName "Vizsgázók" | ForEach-Object displayname > vizsga.txt
+
+
+
+                                05 - zaro
+
+
+
+
+05 VISZGAFELADAT
+
+I.1
+Rename-Computer -NewName "RBVizsga"
+
+I.2
+VBoxManage createhd --filename C:/VBox/HDDs/VizsgaW.vdi --size 10240 --variant standard
+VBoxManage storageattach VIZSGAGEP --storagectl "SATA Controller" 
+--port 1 --device 0 --type hdd --medium C:/VBox/HDDs/VizsgaW.vdi
+
+SERVREN PS:
+Get-Disk | Where partitionstyle -eq ‘raw’ | Initialize-Disk -PartitionStyle MBR -PassThru | New-Partition -DriveLetter W -UseMaximumSize | Format-Volume -FileSystem NTFS -NewFileSystemLabel “W meghajto” -Confirm:$false
+
+I.3
+mkdir W:\Megosztasok
+mkdir W:\WWW
+
+I.4
+New-LocalUser -Name "Ruander" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -UserMayNotChangePassword
+New-LocalUser -Name "Teszt" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -UserMayNotChangePassword
+I.5
+icacls c:\Web /inheritancelevel:d
+icacls c:\Web /remove:g:d Users /t
+icacls c:\Web /grant "Ruander:(OI)(CI)(IO)(F)"
+icacls c:\Web /grant "Ruander:(RX,W)"
+
+I.6
+New-SmbShare -Name "forRuander$" -Path "W:\Megosztasok" -FullAccess "Everyone"
+
+I.7
+Install-WindowsFeature Web-Server -IncludeManagementTools
+Stop-Website 'Default Web site'
+New-Item -ItemType File W:\WWW\index.html -value 'Romany Bator'
+New-WebSite -Name "RBWWW" -Port 80 -HostHeader "RBWWW" -PhysicalPath "W:\WWW\index.html"
+
+
+II.1
+Install-WindowsFeature -name AD-Domain-Services -IncludeManagementTools
+Install-ADDSForest -DomainName "RB.local" -ForestMode WinThreshold -DomainMode WinThreshold -DomainNetbiosName rb -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -InstallDNS 
+
+II.2
+New-ADOrganizationalUnit Vizsga -ProtectedFromAccidentalDeletion $True
+Get-ADOrganizationalUnit -Filter *
+
+II.3
+New-ADUser Vizsga1 -Path "OU=Vizsga,DC=RB,DC=local" -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -enabled $true
+New-ADUser Vizsga2 -Path "OU=Vizsga,DC=RB,DC=local" -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -enabled $true
+New-ADUser Vizsgaztato -Path "OU=Vizsga,DC=RB,DC=local" -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -enabled $true
+
+II.4
+New-ADGroup -GroupScope Global -name Vizsgazok -Path "OU=Vizsga,DC=RB,DC=local"
+Add-ADGroupMember -Identity Vizsgazok -Members Vizsga1, Vizsga2
+New-ADGroup -GroupScope Global -name Vizsgaztatok -Path "OU=Vizsga,DC=RB,DC=local" 
+Add-ADGroupMember -Identity Vizsgaztatok -Members Vizsgaztato
+
+II.5
+mkdir C:\KOZOS
+icacls c:\Web /inheritancelevel:d
+icacls c:\Web /remove:g:d Users /t
+icacls c:\Web /grant "Vizsgaztatok:(OI)(CI)(IO)(F)"
+icacls c:\Web /grant "Vizsgaztatok:(RX,W)"
+icacls c:\Web /grant "Vizsgazok:(OI)(CI)(RX)"
+
+II.6
+Get-ADUser * -properties * | select name lastlogondate | ft -autosize
+
+III.1
+select count(m.id) as 'Visszalépés'
+from merkozes as m
+where m.jatszma1 = '-1' or m.jatszma2 = '-1'
+
+III.2
+select min(m.kezdes) as 'Legkorábban', max(m.kezdes) as 'Legkésőbben'
+from merkozes as m
+where m.fordulo='d8'
+
+III.3
+select m.datum, j1.orszagKod, j1.nev AS 'egyik jatekos', j2.nev AS 'masik jatekos'
+from merkozes as m, jatekos as j1, jatekos as j2
+where m.jatekos1Id=j1.id and m.jatekos2Id=j2.id and j1.orszagKod=j2.orszagKod
+order by j1.orszagKod asc;
+
+III.4
+select j.orszagkod, count(j.id) as 'Játékosok száma'
+from jatekos as j
+group by j.orszagkod
+order by 'Játékosok száma' desc
+
+III.5
+select year(m.datum), count(id) AS "2:0 vagy 0:2"
+from merkozes as m
+where ((jatszma1=2 AND jatszma2=0) OR (jatszma2=2 AND jatszma1=0))
+group by year(m.datum)
+order by year(m.datum) desc
+
+IV.1
+select s.id, s.szamlaszam, s.datum, s.ertek, s.palyazatid, s.koltsegtipusid from koltsegtipus as k, szamla as s
+where k.id=s.koltsegtipusid and k.id='C1' and s.ertek>'100000'
+
+IV.2
+select top 5 s.szamlaszam, s.datum, s.ertek from koltsegtipus as k, szamla as s
+where k.id=s.koltsegtipusid and k.id='A7'
+order by s.ertek desc
+
+IV.3
+select k.megnevezes as 'Megnevezés', sum(cast(s.ertek as bigint)) as 'Elszámolt összeg', count(s.id) as 'Számlák száma'
+from koltsegtipus as k, palyazat as p, szamla as s
+where s.palyazatid=p.id and s.koltsegtipusid=k.id
+group by k.megnevezes
+order by k.megnevezes asc
+
+IV.4
+select p.id as 'Pályázat', 
+    sum(p.tervezetA + p.tervezetC)/count(p.id) as 'keret',
+    sum(s.ertek)/(cast(sum(p.tervezetA+p.tervezetC) as float)/count(p.id))*100 as 'Állapot'
+from koltsegtipus as k, palyazat as p, szamla as s
+where s.palyazatid=p.id and s.koltsegtipusid=k.id
+group by p.id
+order by p.id asc
+
+IV.5
+select year(s.datum) as 'Év', 
+    month(s.datum) as 'Hónap',
+    sum(s.ertek) as 'Összes Költség',
+    count(s.ertek) as 'db'
+from koltsegtipus as k, palyazat as p, szamla as s
+where s.palyazatid=p.id and s.koltsegtipusid=k.id and k.id='A8'
+group by year(s.datum), month(s.datum)
+having sum(s.ertek)>'120000'
+order by 'Összes költség' desc
+
+V.1
+aws ec2 describe-instances
+
+V.2
+aws ec2 create-security-group --group-name rbsg1 --description "RB Security Groupja" --> sg-903004f8
+aws ec2 authorize-security-group-ingress --group-name rbsg1 --protocol tcp --port 22,80 --cidr 0.0.0.0/0
+aws ec2 create-key-pair --key-name rbkp
+aws ec2 run-instances --image-id ami-08c40ec9ead489470 --count 1 --instance-type t2.micro --key-name rbkp --security-group-ids sg-903004f8 --> i-1234567890abcdef0
+
+V.3
+aws ec2 describe-instances --->> 54.196.61.12
+ssh -i /path/rbkp.pem ubuntu@ec2-54-227-174-197.compute-1.amazonaws.com
+sudo apt update
+sudo apt install apache2
+
+V.4
+ss -tlpnu
+
+V.5
+aws ec2 stop-instances --instance-ids i-1234567890abcdef0
+
+
+aws ec2 run-instances --instance-ids i-0030a6808ad2b4c61
+
+
+
+                                06 - win
+
+
+
+mkdir c:\RB-20231114
+
+I.1
+Hoston:
+cd c:\path\to\vbox\
+VBoxManage createvm --name VIZSGA-SZERVER --ostype WS2019 --register
+VBoxManage showvminfo VIZSGA-SZERVER
+VBoxManage modifyvm VIZSGA-SZERVER --cpus 1 --memory 4096 
+VBoxManage createhd --filename c:\path\to\vbox\VIZSGA-SZERVER\VIZSGA-SZERVER.vdi --size 71680 --variant Standard
+VBoxManage storagectl VIZSGA-SZERVER --name "SATA Controller" --add sata --bootable on
+VBoxManage storageattach VIZSGA-SZERVER --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium dc:\path\to\vbox\VIZSGA-SZERVER\VIZSGA-SZERVER.vdi
+VBoxManage storagectl VIZSGA-SZERVER --name "IDE Controller" --add ide
+VBoxManage storageattach VIZSGA-SZERVER --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium c:\download\path\to\iso\vizsga-ws2019.iso
+VBoxManage startvm VIZSGA-SZERVER 
+VBoxManage modifyvm VIZSGA-SZERVER --nic1=bridged --nic2=hostonly   (hostonly, intnet, natnetwork)
+
+I.2
+Szerveren:
+
+Get-NetIPInterface                  --->> Bridged (NAT-kártya) - 30 ; Hostonly (Belső csatoló) - 35
+Set-NetIPInterface -Interfaceindex 30 -InterfaceAlias "NAT-kártya" -Dhcp Enabled
+Set-DnsClientServerAddress -InterfaceIndex 30 -ServerAddresses ("127.0.0.1")
+Set-NetIPInterface -Interfaceindex 35 -InterfaceAlias "Belső csatoló" 
+Set-NetIPAddress -InterfaceIndex 35 -AddressFamily "IPv4" -IPAddress 172.16.20.1 -PrefixLenght 24
+Set-DnsClientServerAddress -InterfaceIndex 35 -ServerAddresses ("127.0.0.1")
+Rename-Computer -ComputerName "DC-SZERVER" -Force -Restart
+
+I.3
+Install-WindowsFeature -name AD-Domain-Services -IncludeManagementTools
+Install-ADDSForest -DomainName "RB25.HU" -ForestMode WinThreshold -DomainMode WinThreshold -DomainNetbiosName RB25 -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -InstallDNS
+
+New-ADOrganizationalUnit -name "SULI" -Path "DC=RB25,DC=HU"
+
+New-ADUser -Name IGAZGATO -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=SULI,DC=RB25,DC=HU" -Enabled $true
+New-ADUser -Name DIAK1 -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=SULI,DC=RB25,DC=HU" -Enabled $true
+New-ADUser -Name DIAK2 -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=SULI,DC=RB25,DC=HU" -Enabled $true
+New-ADUser -Name TANAR -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=SULI,DC=RB25,DC=HU" -Enabled $true
+
+
+Install-WindowsFeature Routing -IncludeManagementTools
+Install-RemoteAccess -VpnType RoutingOnly
+netsh routing ip nat install
+netsh routing ip nat add interface "Belső csatoló" 
+netsh routing ip nat add interface 'NAT-kártya' mode=full
+(Remove-NetIPAddress -InterfaceIndex 6 -AddressFamily IPv4 -IPAddress "10.40.50.1" -PrefixLength 24)
+New-NetIPAddress -InterfaceIndex 6 -AddressFamily IPv4 -IPAddress "10.40.50.1" -PrefixLength 24 -DefaultGateway "10.40.50.200"
+ping 8.8.8.8
+
+
+Get-ADGroup                                         --->>  csinájunk úgy, mintha mg nem lenne ilyen group
+New-ADGroup -name "DIAKOK" -path "OU=SULI,DC=RB25,DC=HU"
+Add-ADGroupMember -Identity "DIAKOK" -Members "DIAK1", "DIAK2"
+
+$logonhours=@{"Logonhours"= [byte[]]$hours=@(0,0,0,0,254,0,0,254,0,0,254,0,0,254,0,0,254,0,0,0,0)}
+Set-ADUSer "DIAK2" -Replace $logonHours
+
+Set-ADDefaultDomainPasswordPolicy -Identity "RB25.HU"  -MinPasswordLength 3 -LockoutThreshold 3 -LockoutDuration 00:30:00 -LockoutObservationWindow 00:30:00 -ComplexityEnabled $false
+
+mkdir c:\FELADAT
+new-item -itemtype file -name korte.txt -path c:\FELADAT\
+echo "gyumolcsok, kortek, almak" > c:\FELADAT\korte.txt
+
+cat c:\FELADAT\korte.txt
+
+icacls c:\Web /inheritancelevel:d
+icacls c:\Web /remove:g:d Users /t
+icacls c:\Web /grant "Tanar:(OI)(CI)(IO)(F)"
+icacls c:\Web /grant "TANAR:(OI)(CI)(RX,W)"
+icacls c:\Web /grant "Users:(RX)"
+
+New-SmbShare -Name "FELADAT" -Path "c:\FELADAT" -FullAccess "Everyone"
+New-SmbMapping -LocalPath 'Z:' -RemotePath '\\DC-SZERVER\FELADAT'
+
+Install-WindowsFeature -Name FS-Resource-Manager -IncludeManagementTools
+New-FsrmFileScreen -Path "C:\FELADAT" -Descprition "No executables" -IncludeGroup "Executable files" -Active:$true
+
+I.4
+Hoston:
+
+cd c:\path\to\vbox\
+VBoxManage createvm --name WIN10 --ostype WIN10 --register
+VBoxManage showvminfo WIN10
+VBoxManage modifyvm WIN10 --cpus 1 --memory 2048 
+VBoxManage createhd --filename c:\path\to\vbox\WIN10\WIN10.vdi --size 40960 --variant Standard
+VBoxManage storagectl WIN10 --name "SATA Controller" --add sata --bootable on
+VBoxManage storageattach WIN10 --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium dc:\path\to\vbox\WIN10\WIN10.vdi
+VBoxManage storagectl WIN10 --name "IDE Controller" --add ide
+VBoxManage storageattach WIN10 --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium c:\download\path\to\iso\vizsga-win10.iso
+VBoxManage startvm WIN10 
+VBoxManage modifyvm WIN10 --nic1=hostonly
+
+
+
+Kliensen:
+
+Get-NetIPInterface                  --->> Hostonly (Belső csatoló) - 35
+
+Set-NetIPInterface -Interfaceindex 35 -InterfaceAlias "Belső csatoló" 
+Set-NetIPAddress -InterfaceIndex 35 -AddressFamily "IPv4" -IPAddress 172.16.20.120 -PrefixLenght 24
+Set-DnsClientServerAddress -InterfaceIndex 35 -ServerAddresses ("172.16.20.1")
+
+
+
+$hostname=hostname.exe
+
+$credential = New-Object System.Management.Automation.PSCredential("RB25\Administrator", (ConvertTo-SecureString -AsPlainText "Password123" -Force))
+Add-Computer -ComputerName $hostname -DomainName "RB25.HU" -Credential $credential -Restart -Force -NewName "Win10"
+
+
+ipconfig /all
+
+ping 172.16.20.1
+ping 8.8.8.8
+
+nslookup ww.youtube.com
+
+cd z:\
+ls z:\
+mkdir z:\almappa
+new-item -itemtype file -name alma.txt -path z:\
+cat z:\korte.txt
+
+
+
+
+                                07 - win
+
+
+
+
+I.1
+cd c:\path\to\vbox\
+VBoxManage createvm --name VIZSGA --ostype WS2019 --register
+VBoxManage showvminfo VIZSGA
+VBoxManage modifyvm VIZSGA --cpus 1 --memory 4096 
+VBoxManage createhd --filename c:\path\to\vbox\VIZSGA\VIZSGA.vdi --size 71680 --variant Standard
+VBoxManage storagectl VIZSGA --name "SATA Controller" --add sata --bootable on
+VBoxManage storageattach VIZSGA --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium dc:\path\to\vbox\VIZSGA\VIZSGA.vdi
+VBoxManage storagectl VIZSGA --name "IDE Controller" --add ide
+VBoxManage storageattach VIZSGA --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium c:\download\path\to\iso\vizsga-ws2019.iso
+VBoxManage startvm VIZSGA 
+VBoxManage modifyvm VIZSGA --nic1=bridged --nic2=hostonly   (hostonly, intnet, natnetwork)
+
+GUI install --->>>> PW:123456aA NAME=VIZSGA
+Get-LocalUser -Name "Administrator" | Set-LocalUser -Password (ConvertTo-SecureString '123456aA' -AsPlainText -Force)
+
+I.2
+Szerveren:
+
+Get-NetIPInterface <# --->> Bridged (NAT-kártya) - 3 ; Hostonly (Belső csatoló) - 5 #>
+
+<#
+Set-NetIPInterface -Interfaceindex 3 -InterfaceAlias "BRIDGE" -Dhcp Enabled
+Set-NetIPInterface -Interfaceindex 5 -InterfaceAlias "INTERNAL"
+#>
+Set-NetIPAddress -InterfaceIndex 3 -Dhcp Enabled
+Set-NetIPAddress -InterfaceIndex 5 -AddressFamily "IPv4" -IPAddress 172.16.10.1 -PrefixLenght 24
+
+I.3
+Hoston:
+
+VBoxManage createhd --filename c:\path\to\vbox\VIZSGA\VIZSGA_HOME.vdi --size 20480 --variant Standard
+VBoxManage storageattach VIZSGA --storagectl "SATA Controller" --port 10 --device 0 --type hdd --medium dc:\path\to\vbox\VIZSGA\VIZSGA_HOME.vdi
+
+Szerveren:
+
+Get-Disk | Where partitionstyle -eq ‘raw’ | Initialize-Disk -PartitionStyle MBR -PassThru | New-Partition -DriveLetter E -UseMaximumSize | Format-Volume -FileSystem NTFS -NewFileSystemLabel “HOME” -Confirm:$false
+
+I.4
+
+Install-WindowsFeature -name AD-Domain-Services -IncludeManagementTools
+Install-ADDSForest -DomainName "MODULZARO.LOCAL" -ForestMode WinThreshold -DomainMode WinThreshold -DomainNetbiosName MODULZARO -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "123456aA" -Force) -InstallDNS
+
+Set-DnsClientServerAddress -InterfaceIndex 5 -ServerAddresses "127.0.0.1" -PassThru
+
+Install-WindowsFeature DHCP -IncludeManagementTools
+
+$hostname=hostname.exe
+Add-DhcpServerSecurityGroup -ComputerName $hostname
+Add-DhcpServerInDC -DnsName "dns.MODULZARO.LOCAL" -IPAddress 172.16.10.1 -PassThru
+Add-DhcpServerv4Scope -Name "Belső szórás 20-43" -StartRange 172.16.10.20 -EndRange 172.16.10.43 -SubnetMask 255.255.255.0 -LeaseDuration 8.00:00:00 -State Active -PassThru 
+Add-DhcpServerv4Scope -Name "Belső szórás 45-50" -StartRange 172.16.10.45 -EndRange 172.16.10.50 -SubnetMask 255.255.255.0 -LeaseDuration 8.00:00:00 -State Active -PassThru 
+
+Enable-ADOptionalFeature –Identity "CN=Recycle Bin Feature,CN=Optional Features,CN=Directory Service,CN=Windows NT,CN=Services,CN=Configuration,DC=MODULZARO,DC=LOCAL" -Scope ForestOrConfigurationSet -Target "MODULZARO.LOCAL"
+I.5
+Hoston:
+
+cd c:\path\to\vbox\
+VBoxManage createvm --name WIN10 --ostype WIN10 --register
+VBoxManage showvminfo WIN10
+VBoxManage modifyvm WIN10 --cpus 1 --memory 2048 
+VBoxManage createhd --filename c:\path\to\vbox\WIN10\WIN10.vdi --size 40960 --variant Standard
+VBoxManage storagectl WIN10 --name "SATA Controller" --add sata --bootable on
+VBoxManage storageattach WIN10 --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium dc:\path\to\vbox\WIN10\WIN10.vdi
+VBoxManage storagectl WIN10 --name "IDE Controller" --add ide
+VBoxManage storageattach WIN10 --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium c:\download\path\to\iso\vizsga-win10.iso
+VBoxManage startvm WIN10 
+VBoxManage modifyvm WIN10 --nic1=hostonly
+
+
+
+Kliensen:
+
+Get-NetIPInterface <# --->> Hostonly (Belső csatoló) - 5 #>
+
+set-NetIPInterface -Interfaceindex 5 -InterfaceAlias "Belső csatoló"  -Dhcp enabled
+<# Ha a DHCP nem működik:
+Set-NetIPAddress -InterfaceIndex 35 -AddressFamily "IPv4" -IPAddress 172.16.10.10 -PrefixLenght 24 #>
+
+$hostname=hostname.exe
+
+$credential = New-Object System.Management.Automation.PSCredential("MODULZARO\Administrator", (ConvertTo-SecureString -AsPlainText "Password123" -Force))
+Add-Computer -ComputerName $hostname -DomainName "MODULZARO.LOCAL" -Credential $credential -Restart -Force -NewName "WIN10"
+<#
+Set-DnsClientServerAddress -InterfaceIndex 5 -ServerAddresses ("172.16.20.1")
+#>
+I.6
+Szerveren:
+
+New-ADOrganizationalUnit -name "Biztosító" -Path "DC=MODULZARO,DC=LOCAL"
+
+I.7
+New-ADGroup -name "Uzletkotok" -GroupCategory Security -GroupScope Global -path "OU=BIZTOSÍTÓ,DC=MODULZARO,DC=LOCAL"
+
+I.8
+New-ADUser -Name "dolgos.marton" -DisplayName "Dolgos Márton" -AccountPassword (ConvertTo-SecureString -AsPlainText "Vizsga2019" -Force) -CannotChangePassword $true -PasswordNeverExpires $true -Path "OU=BIZTOSÍTÓ,DC=MODULZARO,DC=LOCAL" -Enabled $true
+Add-ADGroupMember -Identity "Uzletkotok" -Members "dolgos.marton"
+
+I.9
+New-ADUser -Name "szorgos.mariann" -DisplayName "Szorgos Mariann" -AccountPassword (ConvertTo-SecureString -AsPlainText "Vizsga2019" -Force) -CannotChangePassword $true -PasswordNeverExpires $true -Path "OU=BIZTOSÍTÓ,DC=MODULZARO,DC=LOCAL" -Enabled $true
+Add-ADGroupMember -Identity "Uzletkotok" -Members "szorgos.mariann"
+
+I.10
+mkdir E:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\dolgosmarton
+mkdir E:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\szorgosmariann
+
+icacls e:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\dolgosmarton /inheritancelevel:d
+icacls e:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\dolgosmarton /remove:g:d Users /t
+icacls e:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\dolgosmarton /grant "dolgos.marton:(OI)(CI)(IO)(F)"
+icacls e:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\dolgosmarton /grant "dolgos.marton:(RX,W)"
+
+icacls e:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\szorgosmariann /inheritancelevel:d
+icacls e:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\szorgosmariann /remove:g:d Users /t
+icacls e:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\szorgosmariann /grant "szorgos.mariann:(OI)(CI)(IO)(F)"
+icacls e:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\szorgosmariann /grant "szorgos.mariann:(RX,W)"
+
+Set-ADUser -identity "dolgos.marton" -HomeDirectory "e:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\dolgosmarton"
+Set-ADUser -identity "szorgos.mariann" -HomeDirectory "e:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\szorgosmariann"
+
+$hostname=hostname.exe
+
+New-SmbShare -Name "UZLETKOTOK" -Path "E:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK" -FullAccess "Everyone"
+
+New-SmbMapping -UserName "dolgos.marton" -HomeFolder -LocalPath "H:\" -RemotePath "\\\$hostname\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\dolgosmarton" -Persistent $true
+New-SmbMapping -UserName "szorgos.mariann" -HomeFolder -LocalPath "H:\" -RemotePath "\\\$hostname\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\szorgosmariann" -Persistent $true
+
+I.11
+Install-WindowsFeature -Name FS-Resource-Manager -IncludeManagementTools
+New-FsrmQuotaTemplate -Name "Biztosito" -Description "limit usage to 300 MB." -Size 300MB
+
+New-FsrmQuota -Path "e:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\dolgosmarton" -Description "300MB Limit" -Template "Biztosito"
+New-FsrmQuota -Path "e:\MODULZARO-LOCAL\BIZTOSÍTÓ\UZLETKOTOK\szorgosmariann" -Description "300MB Limit" -Template "Biztosito"
+
+I.12
+$logonhours=@{"Logonhours"= [byte[]]$hours=@(0,0,0,3,255,248,3,255,248,3,255,248,3,255,248,3,255,248,0,0,0)}
+Set-ADUSer "dolgos.marton" -Replace $logonHours
+$logonhours=@{"Logonhours"= [byte[]]$hours=@(0,0,0,3,255,248,3,255,248,3,255,248,3,255,248,3,255,248,0,0,0)}
+Set-ADUSer "szorgos.mariann" -Replace $logonHours
+
+I.13
+Set-ADDefaultDomainPasswordPolicy -Identity "MODULZARO.LOCAL"  -MinPasswordLength 4  -ComplexityEnabled $false
+
+I.14
+mkdir e:\Kozos
+New-SmbShare -Name "Kozos" -Path "E:\Kozos" -FullAccess "Everyone"
+
+$hostname=hostname.exe
+New-SmbMapping -GlobalMapping -LocalPath "K:\" -RemotePath "\\\$hostname\Kozos" -Persistent $true
+
+I.15
+Szerveren:
+
+Get-NetIPInterface <# --->> Bridged (NAT-kártya) - 3 ; Hostonly (Belső csatoló) - 5 #>
+Set-NetIPInterface -Interfaceindex 3 -InterfaceAlias "NAT-kártya" -Dhcp Enabled
+Set-NetIPInterface -Interfaceindex 5 -InterfaceAlias "Belső csatoló"
+
+Install-WindowsFeature Routing -IncludeManagementTools
+Install-RemoteAccess -VpnType RoutingOnly
+netsh routing ip nat install
+netsh routing ip nat add interface "Belső csatoló" 
+netsh routing ip nat add interface 'NAT-kártya' mode=full
+
+Kliensen:
+
+ipconfig /all <# 172.16.10.20 - ifIndex 5 - Nincs DGW #>
+ipconfig /release
+ipconfig /renew
+                    <# De ammennyiben nem működik a dhcp:
+                    Remove-NetIPAddress -InterfaceIndex 5 -IPAddress 172.16.10.20
+                    New-NetIPAddress -InterfaceIndex 5 -AddressFamily IPv4 -IPAddress "172.16.10.20" -PrefixLength 24 -DefaultGateway "172.16.10.1"
+                    ping 8.8.8.8
+                    nslookup www.youtube.com
+                    #>
+
+
+
+
+                                08 - win
+
+
+I.1
+Rename-Computer -computername "VIZSGA2"
+
+I.2
+Get-NetIPInterface <# ifIndex - 5 #>
+Set-NetIPAddress -InterfaceIndex 5 -AddressFamily IPv4 -IPAdress 10.200.20.1 -PrefixLenght 24
+
+I.3
+/1
+
+Hoston:
+VBoxManage createhd --filename C:/VBox/HDDs/VIZSGA2E.vdi --size 20480 --variant standard
+VBoxManage storageattach VIZSGA2GEP --storagectl "SATA Controller" 
+--port 10 --device 0 --type hdd --medium C:/VBox/HDDs/VIZSGA2E.vdi
+
+Szerveren:
+
+Get-Disk | Where partitionstyle -eq "raw" | Initialize-Disk -PartitionStyle MBR -PassThru | New-Partition -DriveLetter E -UseMaximumSize | Format-Volume -FileSystem NTFS -NewFileSystemLabel "Home" -Confirm:$false
+
+/2
+Install-WindowsFeature -name AD-Domain-Services -IncludeManagementTools
+Install-ADDSForest -DomainName "VIZSGA.LOCAL" -ForestMode "Windows2012R2Forest" -DomainMode "Windows2012R2Domain" -DomainNetbiosName VIZSGA -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "123456aA@" -Force) -InstallDNS 
+
+
+/3
+Install-WindowsFeature DHCP -IncludeManagementTools
+
+Add-DhcpServerSecurityGroup -ComputerName "VIZSGA2"
+Add-DhcpServerInDC -DnsName "dns.VIZSGA.LOCAL" -IPAddress 10.200.20.1 -PassThru
+Add-DhcpServerv4Scope -Name "Belső szórás 20-43" -StartRange 10.200.20.100 -EndRange 10.200.20.119 -SubnetMask 255.255.255.0 -LeaseDuration 8.00:00:00 -State Active -PassThru 
+Add-DhcpServerv4Scope -Name "Belső szórás 45-50" -StartRange 10.200.20.131 -EndRange 10.200.20.150 -SubnetMask 255.255.255.0 -LeaseDuration 8.00:00:00 -State Active -PassThru
+
+/4
+Install-WindowsFeature -Name FS-Resource-Manager -IncludeManagementTools
+
+/5
+<# AD-val együtt került telepítésre #>
+
+I.4
+Kliensen:
+
+Get-NetIPInterface <# --->> Hostonly (Belső csatoló) - 5 #>
+
+Set-NetIPInterface -Interfaceindex 5 -InterfaceAlias "Belső csatoló"  -Dhcp enabled
+<# Ha a DHCP nem működik:
+Set-NetIPAddress -InterfaceIndex 5 -AddressFamily "IPv4" -IPAddress 10.200.20.20 -PrefixLenght 24 #>
+$hostname=hostname.exe
+$credential = New-Object System.Management.Automation.PSCredential("VIZSGA\Administrator", (ConvertTo-SecureString -AsPlainText "123456aA@" -Force))
+Add-Computer -ComputerName $hostname -DomainName "VIZSGA.LOCAL" -Credential $credential -Restart -Force -NewName "WIN10"
+
+I.5
+Szerveren:
+
+New-ADOrganizationalUnit -name "Biztosító" -Path "DC=VIZSGA,DC=LOCAL"
+
+New-ADOrganizationalUnit -name "Sales" -Path "OU=BIZTOSÍTÓ,DC=VIZSGA,DC=LOCAL"
+New-ADOrganizationalUnit -name "Marketing" -Path "OU=BIZTOSÍTÓ,DC=VIZSGA,DC=LOCAL"
+New-ADOrganizationalUnit -name "HR" -Path "OU=BIZTOSÍTÓ,DC=VIZSGA,DC=LOCAL"
+
+New-ADGroup -name "G_Sales" -GroupCategory Security -GroupScope Global -Path "OU=SALES,OU=BIZTOSÍTÓ,DC=VIZSGA,DC=LOCAL"
+New-ADGroup -name "G_Marketing" -GroupCategory Security -GroupScope Global -Path "OU=MARKETING,OU=BIZTOSÍTÓ,DC=VIZSGA,DC=LOCAL"
+New-ADGroup -name "G_HR" -GroupCategory Security -GroupScope Global -Path "OU=HR,OU=BIZTOSÍTÓ,DC=VIZSGA,DC=LOCAL"
+
+I.6
+New-ADUser -Name "kiss.attila" -DisplayName "Kiss Attila" -AccountPassword (ConvertTo-SecureString -AsPlainText "A123456a@" -Force) -CannotChangePassword $true -PasswordNeverExpires $true -Path "OU=SALES,OU=BIZTOSÍTÓ,DC=VIZSGA,DC=LOCAL" -Enabled $true
+
+Add-ADGroupMember -Identity "G_Sales" -Members "kiss.attila"
+
+I.7
+New-ADUser -Name "nagy.peter" -DisplayName "Nagy Péter" -AccountPassword (ConvertTo-SecureString -AsPlainText "A123456a@" -Force) -CannotChangePassword $true -PasswordNeverExpires $true -Path "OU=MARKETING,OU=BIZTOSÍTÓ,DC=VIZSGA,DC=LOCAL" -Enabled $true
+
+Add-ADGroupMember -Identity "G_Marketing" -Members "nagy.peter"
+
+I.8
+New-ADUser -Name "kovacs.eva" -DisplayName "Kovács Éva" -AccountPassword (ConvertTo-SecureString -AsPlainText "A123456a@" -Force) -CannotChangePassword $true -PasswordNeverExpires $true -Path "OU=HR,OU=BIZTOSÍTÓ,DC=VIZSGA,DC=LOCAL" -Enabled $true
+
+Add-ADGroupMember -Identity "G_HR" -Members "kovacs.eva"
+
+I.9
+mkdir K:\biztosito\sales
+mkdir K:\biztosito\marketing
+mkdir K:\biztosito\hr
+
+mkdir K:\biztosito\sales\kissattila
+mkdir K:\biztosito\marketing\nagypeter
+mkdir K:\biztosito\hr\kovacseva
+
+New-SmbShare -Name "VIZSGA" -Path "K:\" -FullAccess "Everyone"
+
+New-SmbMapping -UserName "kiss.attila" -HomeFolder -LocalPath "H:\" -RemotePath "\\VIZSGA\biztosito\sales\kissattila" -Presistent $true
+New-SmbMapping -UserName "nagy.peter" -HomeFolder -LocalPath "H:\" -RemotePath "\\VIZSGA\biztosito\marketing\nagypeter" -Presistent $true
+New-SmbMapping -UserName "kovacs.eva" -HomeFolder -LocalPath "H:\" -RemotePath "\\VIZSGA\biztosito\hr\kovacseva" -Presistent $true
+
+I.10
+New-FsrmQuotaTemplate -Name "Biztosito" -Description "limit usage to 150 MB." -Size 150MB
+
+New-FsrmQuota -Path "K:\biztosito\sales" -Description "150MB Limit" -Template "Biztosito"
+
+I.11
+logonhours=@{"Logonhours"= [byte[]]$hours=@(0, 0, 0, 0, 255, 252, 0, 255, 252, 0, 255, 252, 0, 255, 252, 0, 255, 252, 0, 0, 0}
+
+Set-ADUSer "kiss.attila" -Replace $logonHours
+Set-ADUSer "nagy.peter" -Replace $logonHours
+Set-ADUSer "kovacs.eva" -Replace $logonHours
+
+I.12
+ <#
+ 
+ #>
+
+I.14
+Set-ADDefaultDomainPasswordPolicy -Identity "VIZSGA.LOCAL"  -MinPasswordLength 5 -LockoutThreshold 3 -LockoutDuration 00:30:00 -LockoutObservationWindow 00:30:00 -ComplexityEnabled $false
+
+I.15 <# Domainenként csak egy passwordplicy lehetséges, a következő pedig csak felülírná az előzőt, de a szigorúbb az irányadó - Komplexitást nem lehet személyreszabni, ha be van kapcsolva 4 feltételből 3nak kell eleget tenni #>
+Set-ADDefaultDomainPasswordPolicy -Identity "VIZSGA.LOCAL"  -MinPasswordLength 8 -LockoutThreshold 3 -LockoutDuration 00:30:00 -LockoutObservationWindow 00:30:00 -ComplexityEnabled $true
+
+I.16
+mkdir K:\Kozos
+New-SmbShare -Name "Kozos" -Path "K:\Kozos" -FullAccess "Everyone"
+
+$hostname=VIZSGA
+New-SmbMapping -GlobalMapping -LocalPath "K:\" -RemotePath "\\$hostname\Kozos" -Persistent $true
+
+I.További:
+Install-WindosFeature -Name Web-Server -IncludeManagementTools
+
+New-Item -ItemType file -name "index.html" -path "c:\Web\"
+echo "<ROMÁNY BÁTOR;2023.11.12>" > c:\Web\index.html
+New-WebSite -Name "Marketing" -Port 80 -PhysicalPath "c:\Web\index.html" -HostHeader "marketing.vizsga.local"
+
+ipconfig /all 
+Set-NetIPAddress -InterfaceIndex 3 -InterfaceAlias "BRIDGE"
+Set-NetIPAddress -InterfaceIndex 5 -InterfaceAlias "INT"
+Install-WindowsFeature Routing -IncludeManagementTools
+Install-RemoteAccess -VpnType RoutingOnly
+netsh routing ip nat install
+netsh routing ip nat add interface "INT" 
+netsh routing ip nat add interface 'BRIDGE' mode=full
+
+
+Kliensen:
+ipconfig /all
+ipconfig /release
+ipconfig /renew
+
+
+<# --Ha nem működik a DHCP--
+(Remove-NetIPAddress -InterfaceIndex 5 -AddressFamily IPv4 -IPAddress "10.200.20.20" -PrefixLength 24)
+New-NetIPAddress -InterfaceIndex 5 -AddressFamily IPv4 -IPAddress "10.200.20.20" -PrefixLength 24 -DefaultGateway "10.200.20.1"
+#>
+
+ping 8.8.8.8
+ping bme.hu
+
+                                09 - win
+<#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#>
+                                10 - zaro
+I.1
+cd c:\path\to\vbox\
+VBoxManage createvm --name 10_ZARO_SZERVER --ostype WS2022 --register
+VBoxManage showvminfo 10_ZARO_SZERVER
+VBoxManage modifyvm 10_ZARO_SZERVER --cpus 1 --memory 4096 
+VBoxManage createhd --filename c:\path\to\vbox\10_ZARO_SZERVER\10_ZARO_SZERVER.vdi --size 40960 --variant Standard
+VBoxManage storagectl 10_ZARO_SZERVER --name "SATA Controller" --add sata --bootable on
+VBoxManage storageattach 10_ZARO_SZERVER --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium dc:\path\to\vbox\10_ZARO_SZERVER\10_ZARO_SZERVER.vdi
+VBoxManage storagectl 10_ZARO_SZERVER --name "IDE Controller" --add ide
+VBoxManage storageattach 10_ZARO_SZERVER --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium c:\download\path\to\iso\10_ZARO_SZERVER-ws2022.iso
+VBoxManage startvm 10_ZARO_SZERVER 
+VBoxManage modifyvm 10_ZARO_SZERVER --nic1=bridged <# (hostonly, intnet, natnetwork) #>  
+
+I.2
+Get-LocalUser -Name "Administrator" | Set-LocalUser -Password (ConvertTo-SecureString 'A123456a' -AsPlainText -Force)
+
+Get-NetIPInterface <# --->> Bridged (NAT-kártya) - 3  #>
+Set-NetIPAddress -InterfaceIndex 3 -InterfaceAlias "Belső" -AddressFamily IPv4 -IPAddress "192.168.100.1" -PrefixLenght 24
+
+
+
+I.3
+Rename-Computer -ComputerName "JRUVizsga"
+
+I.4
+Install-WindowsFeature -name AD-Domain-Services -IncludeManagementTools
+Install-ADDSForest -DomainName "VIZSGA.LOCAL" -ForestMode WinThreshold -DomainMode WinThreshold -DomainNetbiosName VIZSGA -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "A123456a" -Force) -InstallDNS
+
+I.5
+mkdir c:\megosztasok\KOZOS
+
+icacls c:\megosztasok\KOZOS /inheritancelevel:d 
+icacls c:\megosztasok\KOZOS /remove:g:d Users /t 
+icacls c:\megosztasok\KOZOS /grant "Administrator:(OI)(CI)(IO)(F)" 
+icacls c:\megosztasok\KOZOS /grant "Users:(RX)"
+
+New-SmbShare -Name "KOZOS" -Path "c:\megosztasok\KOZOS" -FullAccess "Everyone"
+
+II.1
+New-ADOrganizationalUnit -Name VIZSGAFELHASZNALOK
+
+II.2
+New-ADGroup -groupscope Global -name "VIZSGAZOK" -Path "OU=VIZSGAFELHASZNALOK,DC=VIZSGA,DC=LOCAL"
+
+II.3
+$csvfile="useradatok.csv"
+new-item -Path . -Name $csvfile -type file -Value "firstname;lastname;sam;ou;password
+User;1;User1;OU=VIZSGAFELHASZNALOK,DC=VIZSGA,DC=LOCAL;Password123
+User;2;User2;OU=VIZSGAFELHASZNALOK,DC=VIZSGA,DC=LOCAL;Password123
+User;3;User3;OU=VIZSGAFELHASZNALOK,DC=VIZSGA,DC=LOCAL;Password123
+"
+
+$user = Import-Csv -Path $csvfile -Delimiter ";"
+foreach ($userP in $user)
+{
+    $DisplayName = $userP.firstname + " " + $userP.lastname;
+    $firstName = $userP.firstname;
+    $lastName = $userP.lastname;
+    $OU = $userP.ou;
+    $Sam = $userP.sam;
+    $UserPassword = ConvertTo-SecureString $userP.password -asplaintext -force;
+
+    New-ADUser -Name $DisplayName -DisplayName $DisplayName -SamAccountName $Sam -GivenName $firstName -Surname $lastName -AccountPassword $UserPassword -Path $OU -Enabled $true -ChangePasswordAtLogon $false -PasswordNeverExpires $true
+    Write-Host $Sam "sikeresen létrehozva"; 
+    Add-ADGroupMember -Identity VIZSGAZOK -Members $Sam
+}
+
+
+II.4
+Get-ADUser -Filter * -Properties * |select name, LastlogonDate
+
+II.5
+Write-Host "Szeretne jelszóváltoztatást? (igen vagy nem)"
+$v=Read-Host
+if($v -eq "igen") {
+    Write-Host "Írja be a felhasználó nevét!"
+    $u=Read-Host
+    if (Get-ADUser -Filter * | Where-Object SamAccountName -eq $u) {
+        Write-Host "Írja be az új jelszót!"
+        $p=Read-Host -AsSecureString
+        if($p -ne "") {
+            Set-ADAccountPassword -Identity $u -Reset -NewPassword (ConvertTo-SecureString -AsPlainText "$p" -Force)
+        } else {
+            "Üres jelszó nem adható meg!"
+        }
+    } else {
+        "Nincs ilyen felhasználó!"
+    }
+}
+
+
+SQL.1
+create database forgalom
+
+SQL.2
+ GUI
+
+SQL.3
+select a.nev, a.ar
+from aru as a, eladas as e, kategoria as k
+where a.aru_kod=e.aru_kod and k.kat_kod=a.kat_kod and ar>'1000'
+
+
+SQL.4
+select a.nev, a.ar, a.egyseg, e.mennyiseg
+from aru as a, eladas as e, kategoria as k
+where a.aru_kod=e.aru_kod and k.kat_kod=a.kat_kod and a.kat_kod='6'
+
+SQL.5
+select count(a.aru_kod) as 'Termékek száma'
+from aru as a, eladas as e, kategoria as k
+where a.aru_kod=e.aru_kod and k.kat_kod=a.kat_kod and a.egyseg='Liter'
+
+SQL.6
+select a.nev as 'Áru név', sum(cast(a.ar as bigint) * cast(e.mennyiseg as bigint)) as 'Bevétel'
+from aru as a, eladas as e, kategoria as k
+where a.aru_kod=e.aru_kod and k.kat_kod=a.kat_kod
+group by a.nev
+
+SQL.7
+select k.kat_nev as 'Kategória', count(a.nev) as 'Termékek száma'
+from aru as a, eladas as e, kategoria as k
+where a.aru_kod=e.aru_kod and k.kat_kod=a.kat_kod
+group by k.kat_nev
+
+SQL.8
+select k.kat_nev as Kategória, sum(cast(e.mennyiseg as bigint)*cast(a.ar as bigint)) as 'Összes bevétel'
+from aru as a, eladas as e, kategoria as k
+where a.aru_kod=e.aru_kod and k.kat_kod=a.kat_kod
+group by k.kat_nev
+
+SQL.9 <# Nincs smeghatározva a hány legdrábább áru nevét jelenítsem meg, az öt legdrágábbat választottam #>
+select top 5 a.nev as 'Áru neve', a.ar as 'Ár'
+from aru as a, eladas as e, kategoria as k
+where a.aru_kod=e.aru_kod and k.kat_kod=a.kat_kod
+order by a.ar desc
+
+SQL.10
+select k.kat_nev
+from aru as a, eladas as e, kategoria as k
+where a.aru_kod=e.aru_kod and k.kat_kod=a.kat_kod and a.ar>'1000'
+group by k.kat_nev
+order by k.kat_nev asc
+
+V.1 <# Csak grafikus felületen lehet! #>
+Azure Active Directory | Bérlők kezelése | Létrehozás
+
+V.2
+New-AzADGroup -DisplayName "CLOUDCSOPORT" -MailNickname "CLOUDCSOPORT"
+
+V.3
+$userek=@("CLOUD1", "CLOUD2", "CLOUD3")
+foreach ($u in $userek){
+    New-AzADUser -DisplayName "$u" -Password (ConvertTo-SecureString -AsPlainText -Force "Password123") -AccountEnabled $true -MailNickname "$u" -UserPrincipalName "${u}@valamigmail.onmicrosoft.com" 
+    Add-AzADGroupMember -TargetGroupObjectId (Get-AzADGroup -DisplayName "CLOUDCSOPORT").Id -MemberObjectId (Get-AzADUser -DisplayName "$u").Id
+}
+
+V.4
+New-AzADGroup -DisplayName "CLOUDCSOPORT2" -MailNickname "CLOUDCSOPORT2"
+Start-Sleep 5
+Remove-AzADGroup -DisplayName "CLOUDCSOPORT2"
+
+V.5
+Get-AzADGroup
+Get-AzADUser
+
+
+
+
+
+
+
+                                11 - zaro
+I.1
+Rename-Computer -ComputerName "RBServer"
+
+I.2
+Get-NetIPInterface <# ifIndex 5 #>
+Remove-NetIPAddress -InterfaceIndex 5
+New-NetIPAddress -InterfaceIndex 5 -AddressFamily IPv4 -IPAddress 10.10.10.200 -PrefixLenght 24 -DefaultGateway 10.10.10.254
+Set-DnsClientServerAddress -InterfaceIndex 5 -ServerAddresses ("8.8.8.8")
+
+I.3
+Install-WindowsFeature DHCP -IncludeManagementTools
+
+Add-DhcpServerSecurityGroup -ComputerName "RBServer"
+Add-DhcpServerv4Scope -Name "Belső szórás 20-43" -StartRange 10.10.10.10 -EndRange 10.10.10.99 -SubnetMask 255.255.255.0 -LeaseDuration 8.00:00:00 -State Active -PassThru 
+
+I.4
+$users=@("KissP", "NagyP")
+foreach($u in $users) {
+    New-LocalUser -Name "$u" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -PasswordNeverExpires -AccountNeverExpires -UserMayNotChangePasswor
+}
+$users=$null
+Clear-Variable -name u
+
+I.5
+mkdir C:\Adatok
+
+I.6
+icacls c:\Adatok /inheritancelevel:d 
+icacls c:\Adatok /remove:g:d Users /t 
+icacls c:\Adatok /grant "Administrator:(OI)(CI)(IO)(F)" 
+icacls c:\Adatok /grant "NagyP:(RX,W)"
+icacls c:\Adatok /grant "KissP:(RX)"
+
+I.7
+New-SmbShare -Name "Fontos" -Path "c:\Adatok" -FullAccess "RBServer\KissP", "RBServer\NagyP"
+
+II.1
+Install-WindowsFeature -name AD-Domain-Services -IncludeManagementTools
+Install-ADDSForest -DomainName "RBvizsga.local" -ForestMode WinThreshold -DomainMode WinThreshold -DomainNetbiosName rbvizsga -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -InstallDNS
+
+
+II.2
+Set-DnsClientServerAddress -InterfaceIndex 5 -ServerAddresses ("127.0.0.1", "10.10.10.200")
+Set-DnsServerForwarder -IPAddress 8.8.8.8 -PassThru
+
+II.3
+Add-DnsServerResourceRecordA -Name "gw" -ZoneName "RBvizsga.local" -IPv4Address "10.10.10.254"
+
+Add-DnsServerResourceRecordCName -Name "www" -HostNameAlias "gw.RBServer.local" -ZoneName "RBServer.local" -PassThru
+Add-DnsServerResourceRecordCName -Name "dhcp" -HostNameAlias "gw.RBServer.local" -ZoneName "RBServer.local" -PassThru
+Add-DnsServerResourceRecordCName -Name "ftp" -HostNameAlias "gw.RBServer.local" -ZoneName "RBServer.local" -PassThru
+Add-DnsServerResourceRecordCName -Name "ns" -HostNameAlias "gw.RBServer.local" -ZoneName "RBServer.local" -PassThru
+
+II.4
+Add-DhcpServerInDC -DnsName "dns.rbvizsga.local" -IPAddress 10.10.10.200 -PassThru
+
+II.5
+New-ADOrganizationalUnit -name "Dolgozok" -Path "DC=RBVIZSGA,DC=LOCAL"
+
+II.6
+$users=@("Gazd1", "Gazd2", "Graf1", "Graf2")
+foreach ($u in $users) {
+    New-ADUser -Name $u -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -CannotChangePassword $true -PasswordNeverExpires $true -Path "OU=DOLGOZOK,DC=RBVIZSGA,DC=LOCAL" -Enabled $true
+}
+II.7
+New-ADGroup -name "Gazdasagi" -path "OU=DOLGOZOK,DC=RBVIZSGA,DC=LOCAL"
+New-ADGroup -name "Grafikus" -path "OU=DOLGOZOK,DC=RBVIZSGA,DC=LOCAL"
+
+Add-ADGroupMember -Identity "Gazdasagi" -Members "Gazd1", "Gazd2"
+Add-ADGroupMember -Identity "Grafikus" -Members "Graf1", "Graf2"
+
+II.8
+mkdir C:\Kepek
+
+icacls c:\Adatok /inheritancelevel:d 
+icacls c:\Adatok /remove:g:d Users /t 
+icacls c:\Adatok /grant "Grafikus:(OI)(CI)(IO)(RX,W)"
+
+
+
+III.1
+delete from forma1.versenyek where vnev='Német Nagydíj'
+
+III.2
+update forma1.versenyek set hely='Sao Paulo' where vnev='Brazil Nagyídj'
+
+III.3
+select top 1 p.pnev, count(e.celpoz) as 'gyozelmek'
+from csapatok as c, eredmenyek as e, pilotak as p, versenyek as v
+where c.csazon=p.csapat and p.pazon=e.pilota and e.nagydij=v.vkod and e.celpoz='1'
+group by p.pnev
+
+III.4
+select v.vnev, cast(kor as float)*hossz/1000 as tav
+from csapatok as c, eredmenyek as e, pilotak as p, versenyek as v
+where c.csazon=p.csapat and p.pazon=e.pilota and e.nagydij=v.vkod
+group by v.vnev, v.kor, v.hossz
+order by tav desc
+
+
+III.5
+select top 3 p.pnev, p.szev, c.csnev, min(e.celpoz) as 'legjobb'
+from csapatok as c, eredmenyek as e, pilotak as p, versenyek as v
+where c.csazon=p.csapat and p.pazon=e.pilota and e.nagydij=v.vkod
+group by p.pnev, p.szev, c.csnev
+order by p.szev desc
+
+IV.1
+select top 1 k.kerulet_megnev
+from keruletek as k
+order by k.lak_szam desc
+
+IV.2
+select sum(e.szav_szam) as összesen
+from keruletek as k, eredmenyek as e, partok as p
+where e.part=p.part_kod and k.kerulet_kod=e.kerulet and part_megnev='Vináliai Természetvédők Pártja'
+
+IV.3
+SELECT CAST(SUM(szav_szam) AS float) / (SELECT SUM(jog_szam) FROM keruletek) * 100 AS 'Százalék'
+FROM eredmenyek
+WHERE part='VLP'
+
+IV.4
+select p.part_megnev, sum(szav_szam) as 'szavazatok száma'
+from keruletek as k, eredmenyek as e, partok as p
+where e.part=p.part_kod and k.kerulet_kod=e.kerulet
+group by p.part_megnev, p.part_kod
+order by p.part_kod asc
+
+IV.5
+SELECT part_megnev AS 'Párt', CAST(SUM(szav_szam) AS FLOAT) / (SELECT SUM(szav_szam) FROM eredmenyek) * 100 AS 'Százalék'
+FROM eredmenyek, partok
+WHERE part=part_kod
+GROUP BY part_megnev
+HAVING CAST(SUM(szav_szam) AS FLOAT) / (SELECT SUM(szav_szam) FROM eredmenyek) *100 <15
+ORDER BY 'Százalék' DESC
+
+V.1
+aws s3 mb s3://rbvedre
+
+V.2.
+aws s3 ls
+
+V.3.
+echo "Romány Bátor" > rbvizsga.txt
+
+V.4.
+aws s3 cp rbvizsga.txt s3://rbvedre
+
+V.5.
+aws s3 ls s3://rbvedre
+
+V.6.
+aws s3 rm s3://rbvedre/rbvizsga.txt
+
+V.7.
+aws s3 rb s3://rbvedre
+
+
+
+                                12 - zaro
+
+I.1.
+Rename-Computer -NewName ZaroServer -Force –PassThru
+
+I.2.
+Get-NetAdapter
+Get-NetIPInterface
+New-NetIPAddress -InterfaceIndex 6 -AddressFamily IPv4 -IPAddress "10.11.12.200" -PrefixLength 24 -DefaultGateway "10.11.12.254"
+Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "8.8.8.8" -PassThru
+
+I.3.
+cd \path\to\vbox
+.\VBoxManage createhd --filename C:/VBox/HDDs/VizsgaW.vdi --size 10240 --variant standard
+.\VBoxManage storageattach VIZSGAGEP --storagectl "SATA" 
+--port 2 --device 0 --type hdd --medium C:/VBox/HDDs/VizsgaZ.vdi
+
+Get-Disk | Where partitionstyle -eq ‘raw’ | Initialize-Disk -PartitionStyle MBR -PassThru | New-Partition -DriveLetter Z -UseMaximumSize | Format-Volume -FileSystem NTFS -NewFileSystemLabel “Z meghajto” -Confirm:$false
+
+I.4.
+mkdir Z:\Web
+
+I.5.
+Install-WindowsFeature Web-Server -IncludeManagementTools
+
+I.6.
+Stop-Website 'Default Web Site'
+
+I.7.
+New-WebSite -Name "Zarovizsga" -Port 80 -PhysicalPath "Z:\WWW\index.html"
+echo "Zarovizsga folyamatban..." > Z:\WWW\index.html
+icacls z:\Web
+curl http://localhost
+curl http://10.11.12.200
+
+
+II.1
+Install-WindowsFeature -name AD-Domain-Services –IncludeManagementTools
+Install-ADDSForest -DomainName "zaroad.local" -ForestMode WinThreshold -DomainMode WinThreshold -DomainNetbiosName ZAROAD -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force)
+
+II.2
+'Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "8.8.8.8" -PassThru'
+Add-DnsServerForwarder -IPAddress 8.8.8.8 -PassThru
+
+II.3
+New-ADOrganizationalUnit -Name Zarovizsga
+Get-ADOrganizationalUnit -Filter *
+
+II.4
+New-ADOrganizationalUnit -Name Web -Path "OU=ZAROVIZSGA,DC=ZAROAD,DC=LOCAL"
+Get-ADOrganizationalUnit -Filter *
+
+II.5
+New-ADGroup -GroupScope Global -Name Webmesters -Path "OU=WEB,DC=ZAROAD,DC=LOCAL"
+
+II.6
+New-ADUser -Name teszt -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=WEB,OU=ZAROVIZSGA,DC=ZAROAD,DC=LOCAL" -enabled $true
+New-ADUser -Name webadmin -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=WEB,OU=ZAROVIZSGA,DC=ZAROAD,DC=LOCAL" -enabled $true
+
+II.7
+Add-ADGroupMember -Identity Webmesters -Members webadmin
+
+II.8
+icacls Z:\Web /inheritancelevel:d 
+icacls Z:\Web /remove:g:d Users /t 
+icacls Z:\Web /grant "Vizsgaztatok:(OI)(CI)(IO)(F)" 
+icacls Z:\Web /grant "Vizsgaztatok:(RX,W)" 
+
+
+III.1
+select count(j.nev) as 'C1 nyelvvizsgák száma'
+from jelentkezesek as j, vizsgak as v, nyelvek as n
+where j.vizsga=v.sorsz and v.nyelvid=n.id and v.szint='C1'
+
+III.2
+select min(2018-j.szulev) as legfiatalabb, (select max(2018-szulev) from jelentkezesek) as legidosebb
+from jelentkezesek as j, vizsgak as v, nyelvek as n
+where j.vizsga=v.sorsz and v.nyelvid=n.id
+
+III.3
+select j.nev, j.mobil
+from jelentkezesek as j, vizsgak as v, nyelvek as n
+where j.vizsga=v.sorsz and v.nyelvid=n.id and month(v.idopont)='2' and day(v.idopont)=16 and j.nev like 'V%'
+
+III.4
+select v.idopont
+from jelentkezesek as j, vizsgak as v, nyelvek as n
+where j.vizsga=v.sorsz and v.nyelvid=n.id
+GROUP BY v.idopont
+having count(j.nev)>'24'
+order by v.idopont desc
+
+III.5
+select n.nyelv, v.szint, count(j.nev) as vizsgazo
+from jelentkezesek as j, vizsgak as v, nyelvek as n
+where j.vizsga=v.sorsz and v.nyelvid=n.id
+group by n.nyelv, v.szint
+order by vizsgazo desc
+
+
+IV.1
+select d.nev as 'InfoDB'
+from diakok as d, jelentkezesek as j, tagozatok as t
+where d.oktazon=j.diak and t.akod=j.tag and j.hely='1' and t.nyek='1'
+
+IV.2
+select d.nev
+from diakok as d, jelentkezesek as j, tagozatok as t
+where d.oktazon=j.diak and t.akod=j.tag and d.kpmagy='50' and d.kpmat='50' and d.hozott>='40'
+order by d.nev asc
+
+IV.3
+select d.nev, t.agazat, t.nyek, j.hely, sum(d.hozott+d.kpmagy+d.kpmat) as 'osszpont'
+from diakok as d, jelentkezesek as j, tagozatok as t
+where d.oktazon=j.diak and t.akod=j.tag
+group by d.nev, t.agazat, t.nyek, j.hely
+order by t.agazat asc, osszpont desc, j.hely asc
+
+IV.4
+SELECT agazat, count(diak) AS jelentkezoszam, max(hozott)-min(hozott) AS terjedelem
+FROM diakok INNER JOIN jelentkezesek ON jelentkezesek.diak=diakok.oktazon INNER JOIN tagozatok ON tagozatok.akod=jelentkezesek.tag
+WHERE hely=1 AND nyek=1
+GROUP BY agazat 
+ORDER BY jelentkezoszam DESC;
+
+IV.5
+SELECT agazat as 'ágazat' , avg(2.0*hozott+kpmagy+kpmat) as 'átlag'
+FROM jelentkezesek,diakok, tagozatok
+WHERE hely=1 and oktazon=diak and tag=akod
+GROUP BY agazat
+ORDER BY 'átlag' DESC
+
+V.1
+aws ec2 create-security-group --group-name rbsg1 --description "RB Security Groupja" --> sg-903004f8
+aws ec2 authorize-security-group-ingress --group-name rbsg1 --protocol tcp --port 80,3389 --cidr 0.0.0.0/0
+aws ec2 create-key-pair --key-name rbkp
+aws ec2 run-instances --image-id ami-07a53499a088e4a8c --count 1 --instance-type t2.micro --key-name rbkp --security-group-ids sg-903004f8 --> i-1234567890abcdef0
+
+V.2
+aws ec2 describe-instances --> 54.196.61.12
+
+V.3
+mstsc /v:54.196.61.12:3389
+Enable-NetFirewallRule -Name "FPS-ICMP4-ERQ-In"
+Install-WindowsFeature Web-Server -IncludeManagementTools
+
+V.4
+ping 54.196.61.12
+
+V.5
+curl http://54.196.61.12
+w3m http://54.196.61.12
+
+V.6
+aws ec2 stop-instances --instance-ids i-1234567890abcdef0
+
+
+
+
+
+
+                                RANDOM COMMANDS
+
+
+Get-Service ssh-agent | Set-Service -StartupType Automatic
+
+ssh-add $env:USERPROFILE\.ssh\publickey.pub
