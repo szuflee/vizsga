@@ -1,0 +1,136 @@
+1.
+-
+Host powershell-ben:
+d:\Wutil\VirtualBox\VBoxManage.exe modifyvm WS2022 --nic1=hostonly --nic2=bridged
+d:\Wutil\VirtualBox\VBoxManage.exe modifyvm Win10 --nic1=hostonly
+
+2.
+Get-NetAdapter
+Rename-NetAdapter -Name Ethernet -NewName "Külső"
+Rename-NetAdapter -Name Ethernet2 -NewName "Belső"
+
+3.
+Get-NetIPInterface
+Set-NetIPInterface -InterfaceIndex 6 -Dhcp Enabled
+
+4.
+New-NetIPAddress -InterfaceIndex 10 -AddressFamily IPv4 -IPAddress "10.40.50.200" -PrefixLength 24	
+
+5.
+New-NetIPAddress -InterfaceIndex 10 -AddressFamily IPv4 -IPAddress "10.40.50.1" -PrefixLength 24
+(Remove-NetIPAddress -InterfaceIndex 13 -AddressFamily IPv4 -IPAddress "192.168.56.10" -PrefixLength 24)
+
+6.
+ping 8.8.8.8
+
+7.
+Enable-NetFirewallRule -Name "FPS-ICMP4-ERQ-In"
+Enable-NetFirewallRule -Name "FPS-ICMP4-ERQ-In"
+ping 10.40.50.1
+ping 10.40.50.200
+
+8.
+Rename-Computer -NewName Szerver -Force
+Restart-Computer -Force
+
+9.
+New-LocalUser -Name "Webmester" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -UserMayNotChangePassword
+New-LocalUser -Name "Kulsos" -Password (ConvertTo-SecureString -AsPlainText "Password123" -Force) -UserMayNotChangePassword
+
+10.
+New-LocalGroup "Webmesterek"
+Add-LocalGroupMember -Group "Webmesterek" -Member "Webmester"
+
+11.
+Install-WindowsFeature Web-Server -IncludeManagementTools
+
+12.
+mkdir c:\Web
+
+13.
+icacls c:\Web /inheritancelevel:d
+icacls c:\Web /remove:g:d Users /t
+icacls c:\Web /grant "Webmesterek:(OI)(CI)(IO)(F)"
+icacls c:\Web /grant "Webmesterek:(RX,W)"
+icacls c:\Web /grant "IUSR:(OI)(CI)(RX)"
+
+14.
+Stop-Website 'Default Web site'
+
+15.
+New-WebSite -Name "Tesztoldal" -Port 80 -PhysicalPath "c:\Web"
+echo "Modulzáró vizsga folyamatban…" > C:\Web\index.html
+Kliensről:
+(Invoke-WebRequest http://10.40.50.200 -UseBasicParsing).content
+ 
+16.
+Install-WindowsFeature -name AD-Domain-Services –IncludeManagementTools
+Install-ADDSForest -DomainName "mzaro.local" -ForestMode WinThreshold -DomainMode WinThreshold -DomainNetbiosName MZARO -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -InstallDNS
+
+17.
+Get-DnsServerForwarder   -->> nálam már ott volt konfig nélkül! DE más is volt ott, ezért be kell mindig állítani, ha jót akarsz! A köv parancs felülír mindent!
+Set-DnsServerForwarder -IPAddress 8.8.8.8
+
+18.
+Get-DnsServerResourceRecord -ZoneName "mzaro.local"
+# Már benne van a szerver, tehát nem kell kiadni a köv parancsot!
+(Add-DnsServerResourceRecordA -Name "szerver" -ZoneName "mzaro.local" -IPv4Address "10.40.50.200" -TimeToLive 01:00:00 -PassThru)
+
+Add-DnsServerResourceRecordA -Name "kliens" -ZoneName "mzaro.local" -IPv4Address "10.40.50.1" -TimeToLive 01:00:00 -PassThru
+
+19.
+Add-DnsServerResourceRecordCName -Name "www" -HostNameAlias "szerver.mzaro.local" -ZoneName "mzaro.local" -PassThru
+Add-DnsServerResourceRecordCName -Name "ns" -HostNameAlias "szerver.mzaro.local" -ZoneName "mzaro.local" -PassThru
+Add-DnsServerResourceRecordCName -Name "gw" -HostNameAlias "szerver.mzaro.local" -ZoneName "mzaro.local" -PassThru
+Add-DnsServerResourceRecordCName -Name "win10" -HostNameAlias "kliens.mzaro.local" -ZoneName "mzaro.local" -PassThru
+
+20.
+ipconfig /all --> már magához fordul, ott van a 127.0.0.1 minden interfésznél!
+(Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "127.0.0.1" -PassThru)
+nslookup www.mzaro.local
+nslookup merce.hu
+
+21.
+Set-DnsClientServerAddress -InterfaceIndex 6 -ServerAddresses "10.40.50.200" -PassThru
+nslookup www.mzaro.local
+nslookup merce.hu
+
+22.
+Install-WindowsFeature Routing -IncludeManagementTools
+Install-RemoteAccess -VpnType RoutingOnly
+netsh routing ip nat install
+netsh routing ip nat add interface "Belső"  (Ez itt a belső)
+netsh routing ip nat add interface 'Külső' mode=full
+(Remove-NetIPAddress -InterfaceIndex 6 -AddressFamily IPv4 -IPAddress "10.40.50.1" -PrefixLength 24)
+New-NetIPAddress -InterfaceIndex 6 -AddressFamily IPv4 -IPAddress "10.40.50.1" -PrefixLength 24 -DefaultGateway "10.40.50.200"
+ping 8.8.8.8
+
+23.
+$credential = New-Object System.Management.Automation.PSCredential("mzaro\Administrator", (ConvertTo-SecureString -AsPlainText "Password123" -Force))
+Add-Computer -ComputerName DESKTOP-BFNUHJ7 -DomainName "mzaro.local" -Credential $credential -Restart -Force -NewName "Win10"
+
+24.
+New-ADOrganizationalUnit -Name Teszt
+
+25.
+New-ADUser -Name Tesztelo1 -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=TESZT,DC=MZARO,DC=LOCAL" -Enabled $true
+New-ADUser -Name Tesztelo2 -AccountPassword (ConvertTo-SecureString -AsPlainText "Password123" -Force) -Path "OU=TESZT,DC=MZARO,DC=LOCAL" -Enabled $true
+
+26.
+New-ADGroup -GroupScope Global -Name Tesztelok -Path "OU=TESZT,DC=MZARO,DC=LOCAL"
+Add-ADGroupMember -Identity Tesztelok -Members Tesztelo1, Tesztelo2
+
+27.
+mkdir c:\Tesztanyagok
+icacls c:\Tesztanyagok /inheritancelevel:d
+icacls c:\Tesztanyagok /remove:g:d Users /t
+icacls c:\Tesztanyagok /grant "Tesztelok:(OI)(CI)(IO)(F)"
+icacls c:\Tesztanyagok /grant "Tesztelok:(RX,W)"
+icacls c:\Tesztanyagok /grant "Kulsos:(OI)(CI)(RX)"
+Ellenőrzés csak megosztás után!!!
+
+28.
+New-SmbShare -Name "Teszt$" -Path "c:\Tesztanyagok" -FullAccess "Everyone"
+Beléptetett kliensen nem tudok belépni tartományi felhasználóval!!! ---> időbeállítások , jó, aztán megin nem! MINDIG OTHER USERREL LÉPJ BE!!!!
+New-SmbMapping -LocalPath 'T:' -RemotePath '\\Szerver\Teszt$'
+
